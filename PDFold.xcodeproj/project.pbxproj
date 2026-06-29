@@ -1,0 +1,435 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0FFEB5F63A4C2AD0A78432DD /* SignaturePlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCD0C97807474CEF3A78C2E /* SignaturePlacement.swift */; };
+		156D6EBE77E5EEE483A69866 /* PDFKitEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAC778D374332BD668C7F87 /* PDFKitEngine.swift */; };
+		23FC0C344110D094998B9C83 /* InspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 532E4CABAC0F8B4664C810DE /* InspectorView.swift */; };
+		3740966A95E081C76D12CC9B /* AppToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48261BB994A895CFA9A07CE0 /* AppToolbar.swift */; };
+		3866888BE258CB21880A59E9 /* ReadingCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52DE2C15407429070EAC6A29 /* ReadingCanvas.swift */; };
+		4EE0FCC727CB942973E8FE5B /* AnnotationIndexEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB62EF31188C4156B985682 /* AnnotationIndexEntry.swift */; };
+		4F32970EF66F40DB05F1F6D1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 108F80780D043A5E84254B45 /* Assets.xcassets */; };
+		79BDC616455ED84B90BB2DB9 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92C4739CB79025BE3763E623 /* EmptyStateView.swift */; };
+		7D86C0C61FC456E2CF865899 /* PDFEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 547E4E8F72DEE08FB7A66472 /* PDFEngine.swift */; };
+		8118B9E40222205B59BFEA95 /* MemberDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21406CD791971A026B6A285 /* MemberDocument.swift */; };
+		976F39BDDA9E42A215D88353 /* WorkspaceDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04448B1CCE672C13D52392B1 /* WorkspaceDocument.swift */; };
+		B30400477B2629A199CAE75B /* PasswordPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B768FD261E14C648AC8312EF /* PasswordPromptView.swift */; };
+		B5E88EF7CB2E9E5C9F627940 /* Workspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF9FEA37A2C8446DD2FAA57B /* Workspace.swift */; };
+		B937492F5A9B6525FD516F03 /* PageRef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9304378D6348FB81960551B5 /* PageRef.swift */; };
+		BB8959F2285A83728B364BCC /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93C213D7BF6D3264E18EB458 /* ContentView.swift */; };
+		C563657EBB4551503D42CD5F /* PDFoldApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10F92B037079D607E9FC1F8D /* PDFoldApp.swift */; };
+		CD22775A432ADBE4FB722C36 /* WorkspaceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7FF023C999AB3E5F4C1BD0B /* WorkspaceViewModel.swift */; };
+		D31415D3CD0BD32A94325325 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7B4116C6F5E99383B85A74B /* SidebarView.swift */; };
+		EF74274BF58489C5E7684EF9 /* AppCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF46C0F3791B5D3A22E48619 /* AppCommands.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		04448B1CCE672C13D52392B1 /* WorkspaceDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceDocument.swift; sourceTree = "<group>"; };
+		108F80780D043A5E84254B45 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		10F92B037079D607E9FC1F8D /* PDFoldApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFoldApp.swift; sourceTree = "<group>"; };
+		48261BB994A895CFA9A07CE0 /* AppToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppToolbar.swift; sourceTree = "<group>"; };
+		49CB80F633727439435BF9EE /* PDFold.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PDFold.entitlements; sourceTree = "<group>"; };
+		52DE2C15407429070EAC6A29 /* ReadingCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingCanvas.swift; sourceTree = "<group>"; };
+		532E4CABAC0F8B4664C810DE /* InspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorView.swift; sourceTree = "<group>"; };
+		547E4E8F72DEE08FB7A66472 /* PDFEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFEngine.swift; sourceTree = "<group>"; };
+		7E5FBDD597A2A46452637450 /* PDFold.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDFold.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		92C4739CB79025BE3763E623 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		9304378D6348FB81960551B5 /* PageRef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageRef.swift; sourceTree = "<group>"; };
+		93C213D7BF6D3264E18EB458 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		9CAC778D374332BD668C7F87 /* PDFKitEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFKitEngine.swift; sourceTree = "<group>"; };
+		AF46C0F3791B5D3A22E48619 /* AppCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCommands.swift; sourceTree = "<group>"; };
+		B768FD261E14C648AC8312EF /* PasswordPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordPromptView.swift; sourceTree = "<group>"; };
+		BBCD0C97807474CEF3A78C2E /* SignaturePlacement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignaturePlacement.swift; sourceTree = "<group>"; };
+		C21406CD791971A026B6A285 /* MemberDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberDocument.swift; sourceTree = "<group>"; };
+		C7B4116C6F5E99383B85A74B /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		C7FF023C999AB3E5F4C1BD0B /* WorkspaceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceViewModel.swift; sourceTree = "<group>"; };
+		CBB62EF31188C4156B985682 /* AnnotationIndexEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationIndexEntry.swift; sourceTree = "<group>"; };
+		DF9FEA37A2C8446DD2FAA57B /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		251337720A803B70BED2B379 /* Document */ = {
+			isa = PBXGroup;
+			children = (
+				04448B1CCE672C13D52392B1 /* WorkspaceDocument.swift */,
+			);
+			path = Document;
+			sourceTree = "<group>";
+		};
+		49876067D0F5E9E9BA814C96 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				AF46C0F3791B5D3A22E48619 /* AppCommands.swift */,
+				10F92B037079D607E9FC1F8D /* PDFoldApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A9C9270660C0B4EE924C6FDF /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				108F80780D043A5E84254B45 /* Assets.xcassets */,
+				49CB80F633727439435BF9EE /* PDFold.entitlements */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		ACC0F848BE33007B935362E2 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				48261BB994A895CFA9A07CE0 /* AppToolbar.swift */,
+				93C213D7BF6D3264E18EB458 /* ContentView.swift */,
+				92C4739CB79025BE3763E623 /* EmptyStateView.swift */,
+				532E4CABAC0F8B4664C810DE /* InspectorView.swift */,
+				B768FD261E14C648AC8312EF /* PasswordPromptView.swift */,
+				52DE2C15407429070EAC6A29 /* ReadingCanvas.swift */,
+				C7B4116C6F5E99383B85A74B /* SidebarView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		B041E6B0F5424A558C3F9601 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				C7FF023C999AB3E5F4C1BD0B /* WorkspaceViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		B573FD802240F2101341CA22 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7E5FBDD597A2A46452637450 /* PDFold.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B9D0894FF9788FFAD369BDEC /* Engine */ = {
+			isa = PBXGroup;
+			children = (
+				547E4E8F72DEE08FB7A66472 /* PDFEngine.swift */,
+				9CAC778D374332BD668C7F87 /* PDFKitEngine.swift */,
+			);
+			path = Engine;
+			sourceTree = "<group>";
+		};
+		D8318BD5C43BC309E3D0A687 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				CBB62EF31188C4156B985682 /* AnnotationIndexEntry.swift */,
+				C21406CD791971A026B6A285 /* MemberDocument.swift */,
+				9304378D6348FB81960551B5 /* PageRef.swift */,
+				BBCD0C97807474CEF3A78C2E /* SignaturePlacement.swift */,
+				DF9FEA37A2C8446DD2FAA57B /* Workspace.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		E00473F39C53BD1AD723188C /* PDFold */ = {
+			isa = PBXGroup;
+			children = (
+				49876067D0F5E9E9BA814C96 /* App */,
+				251337720A803B70BED2B379 /* Document */,
+				B9D0894FF9788FFAD369BDEC /* Engine */,
+				D8318BD5C43BC309E3D0A687 /* Models */,
+				A9C9270660C0B4EE924C6FDF /* Resources */,
+				B041E6B0F5424A558C3F9601 /* ViewModels */,
+				ACC0F848BE33007B935362E2 /* Views */,
+			);
+			path = PDFold;
+			sourceTree = "<group>";
+		};
+		E78EA29A82C13DD89F39DED1 = {
+			isa = PBXGroup;
+			children = (
+				E00473F39C53BD1AD723188C /* PDFold */,
+				B573FD802240F2101341CA22 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		82265715D42FB8974195F23E /* PDFold */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 66C6FFC0408A2CB057275F16 /* Build configuration list for PBXNativeTarget "PDFold" */;
+			buildPhases = (
+				FF8B4BBBDEE398F5BBC7FC2D /* Sources */,
+				0647DFD9DEBD810F772001BE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PDFold;
+			packageProductDependencies = (
+			);
+			productName = PDFold;
+			productReference = 7E5FBDD597A2A46452637450 /* PDFold.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E3AF924F26CE4D98CA0F5CCA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					82265715D42FB8974195F23E = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 452DAAAB9C83A6CF5AB951F8 /* Build configuration list for PBXProject "PDFold" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = E78EA29A82C13DD89F39DED1;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B573FD802240F2101341CA22 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				82265715D42FB8974195F23E /* PDFold */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0647DFD9DEBD810F772001BE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F32970EF66F40DB05F1F6D1 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		FF8B4BBBDEE398F5BBC7FC2D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4EE0FCC727CB942973E8FE5B /* AnnotationIndexEntry.swift in Sources */,
+				EF74274BF58489C5E7684EF9 /* AppCommands.swift in Sources */,
+				3740966A95E081C76D12CC9B /* AppToolbar.swift in Sources */,
+				BB8959F2285A83728B364BCC /* ContentView.swift in Sources */,
+				79BDC616455ED84B90BB2DB9 /* EmptyStateView.swift in Sources */,
+				23FC0C344110D094998B9C83 /* InspectorView.swift in Sources */,
+				8118B9E40222205B59BFEA95 /* MemberDocument.swift in Sources */,
+				7D86C0C61FC456E2CF865899 /* PDFEngine.swift in Sources */,
+				156D6EBE77E5EEE483A69866 /* PDFKitEngine.swift in Sources */,
+				C563657EBB4551503D42CD5F /* PDFoldApp.swift in Sources */,
+				B937492F5A9B6525FD516F03 /* PageRef.swift in Sources */,
+				B30400477B2629A199CAE75B /* PasswordPromptView.swift in Sources */,
+				3866888BE258CB21880A59E9 /* ReadingCanvas.swift in Sources */,
+				D31415D3CD0BD32A94325325 /* SidebarView.swift in Sources */,
+				0FFEB5F63A4C2AD0A78432DD /* SignaturePlacement.swift in Sources */,
+				B5E88EF7CB2E9E5C9F627940 /* Workspace.swift in Sources */,
+				976F39BDDA9E42A215D88353 /* WorkspaceDocument.swift in Sources */,
+				CD22775A432ADBE4FB722C36 /* WorkspaceViewModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0C07B14CC38B51DD80120898 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PDFold/Resources/PDFold.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = PDFold/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_NAME = PDFold;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		3ECB2F3614E2CDD71A7E4654 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ud.PDFold;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		62ADC71FCECB14374A2E72EE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PDFold/Resources/PDFold.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = PDFold/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_NAME = PDFold;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		907F344F2515986030AF9811 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ud.PDFold;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		452DAAAB9C83A6CF5AB951F8 /* Build configuration list for PBXProject "PDFold" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				907F344F2515986030AF9811 /* Debug */,
+				3ECB2F3614E2CDD71A7E4654 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		66C6FFC0408A2CB057275F16 /* Build configuration list for PBXNativeTarget "PDFold" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0C07B14CC38B51DD80120898 /* Debug */,
+				62ADC71FCECB14374A2E72EE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E3AF924F26CE4D98CA0F5CCA /* Project object */;
+}
