@@ -13,7 +13,21 @@
   <img alt="Swift 5.9" src="https://img.shields.io/badge/Swift-5.9-F05138?style=for-the-badge&logo=swift&logoColor=white">
   <img alt="SwiftUI" src="https://img.shields.io/badge/UI-SwiftUI-0A84FF?style=for-the-badge">
   <img alt="PDFKit" src="https://img.shields.io/badge/Engine-PDFKit-10B981?style=for-the-badge">
+  <img alt="Double-click installer" src="https://img.shields.io/badge/Setup-Double--click-7C3AED?style=for-the-badge">
+  <img alt="Smoke tested" src="https://img.shields.io/badge/Quality-Smoke%20tested-10B981?style=for-the-badge">
   <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-6B7280?style=for-the-badge">
+</p>
+
+<p align="center">
+  <a href="#simplest-local-setup">⚡ Setup</a>
+  ·
+  <a href="#what-it-does">✨ Features</a>
+  ·
+  <a href="#architecture">🏗️ Architecture</a>
+  ·
+  <a href="#quality-checks">✅ Quality</a>
+  ·
+  <a href="#troubleshooting">🧰 Help</a>
 </p>
 
 ---
@@ -30,34 +44,35 @@ PDFold folds the mess into a usable workspace. Hence the name. I regret nothing.
 
 ## At A Glance
 
-| Signal | Why It Matters |
-| --- | --- |
-| 🖥️ Native macOS | SwiftUI, PDFKit, document-based app architecture, sandboxed file access |
-| 🔒 Local-first | No accounts, no upload pipeline, no "where did my documents go?" subplot |
-| 🧭 Real workflow | Import, combine, annotate, search, sign, save, print, export |
-| 🛠️ Simple setup | Double-click one file to install, then run that same file again to update |
-| 🧑‍💼 Portfolio-ready | Clear product problem, practical engineering, user-facing polish |
+|  | Signal | Why It Matters |
+| --- | --- | --- |
+| 🖥️ | Native macOS | SwiftUI, PDFKit, document-based app architecture, sandboxed file access |
+| 🔒 | Local-first | No accounts, no upload pipeline, no "where did my documents go?" subplot |
+| 🧭 | Real workflow | Import, combine, annotate, search, sign, save, print, export |
+| ⚡ | Simple setup | Double-click one file to install, then run that same file again to update |
+| ✅ | Release-checked | Installer build, syntax checks, and README hygiene are part of the handoff |
+| 🧑‍💼 | Portfolio-ready | Clear product problem, practical engineering, user-facing polish |
 
 ## Who This Is For
 
-| Audience | What to Notice |
-| --- | --- |
-| Recruiters | A polished native macOS app with a clear user problem, visible product thinking, and practical engineering choices. |
-| Developers | SwiftUI, PDFKit, document packages, custom import conversion, manifest-based bundle export, undo-aware page operations, and installer automation. |
-| Actual humans with PDFs | Drag files in, make sense of them, sign what needs signing, export one clean document, and move on with your day. |
+|  | Audience | What to Notice |
+| --- | --- | --- |
+| 🧑‍💼 | Recruiters | A polished native macOS app with a clear user problem, visible product thinking, and practical engineering choices. |
+| 🧑‍💻 | Developers | SwiftUI, PDFKit, document packages, custom import conversion, manifest-based bundle export, undo-aware page operations, and installer automation. |
+| 📎 | Actual humans with PDFs | Drag files in, make sense of them, sign what needs signing, export one clean document, and move on with your day. |
 
 ## What It Does
 
-| Capability | Details |
-| --- | --- |
-| 📥 Import | PDFs, Word docs, HTML, RTF, Markdown, plain text, CSV, JSON, XML, and images |
-| 🗂️ Organize | Combine files, reorder source documents, move pages within documents, rotate pages, and delete pages |
-| 📖 Read | Native PDF canvas, generated section banners, table of contents, sidebar navigation, and search |
-| ✍️ Mark up | Highlight, note, ink, underline, strikeout, and signature tools |
-| 💾 Save | Editable `.pdfoldproj` document packages with workspace metadata and source PDF data |
-| 📤 Export | Plain merged PDF, printable workspace, or `.pdfold` bundle with embedded manifest data |
-| 🔑 Unlock | Password-protected PDF prompt using native PDFKit behavior |
-| 🛡️ Protect | Local-first by design; your files stay on your Mac |
+|  | Capability | Details |
+| --- | --- | --- |
+| 📥 | Import | PDFs, Word docs, HTML, RTF, Markdown, plain text, CSV, JSON, XML, and images |
+| 🗂️ | Organize | Combine files, reorder source documents, move pages within documents, rotate pages, and delete pages |
+| 📖 | Read | Native PDF canvas, generated section banners, table of contents, sidebar navigation, and search |
+| ✍️ | Mark up | Highlight, note, ink, underline, strikeout, and signature tools |
+| 💾 | Save | Editable `.pdfoldproj` document packages with workspace metadata and source PDF data |
+| 📤 | Export | Plain merged PDF, printable workspace, or `.pdfold` bundle with embedded manifest data |
+| 🔑 | Unlock | Password-protected PDF prompt using native PDFKit behavior |
+| 🛡️ | Protect | Local-first by design; your files stay on your Mac |
 
 ## Product Flow
 
@@ -88,11 +103,11 @@ flowchart LR
     Engine --> Output
 ```
 
-| Layer | Responsibility |
-| --- | --- |
-| SwiftUI app | Presents the workspace, sidebar, reader, tools, search, and export actions |
-| Document engine | Converts imports, builds the combined PDF, manages annotations, and writes exports |
-| Local storage | Keeps editable `.pdfoldproj` packages and generated output on the user's Mac |
+|  | Layer | Responsibility |
+| --- | --- | --- |
+| 🖥️ | SwiftUI app | Presents the workspace, sidebar, reader, tools, search, and export actions |
+| ⚙️ | Document engine | Converts imports, builds the combined PDF, manages annotations, and writes exports |
+| 💾 | Local storage | Keeps editable `.pdfoldproj` packages and generated output on the user's Mac |
 
 ## Why It Matters
 
@@ -104,9 +119,11 @@ The app is intentionally local-first. No account. No upload step. No mysterious 
 
 The entire local install path is designed to be one double-click:
 
-1. Double-click [`Install or Update PDFold.command`](Install%20or%20Update%20PDFold.command).
-2. Let it build PDFold locally.
-3. Use the `PDFold` Desktop launcher it creates.
+|  | Step | Action |
+| --- | --- | --- |
+| ⚡ | 1 | Double-click [`Install or Update PDFold.command`](Install%20or%20Update%20PDFold.command) |
+| 🏗️ | 2 | Let it build PDFold locally |
+| 🚀 | 3 | Use the `PDFold` Desktop launcher it creates |
 
 That is it. The installer puts the app in `~/Applications/PDFold.app`, refreshes a Desktop launcher named `PDFold`, signs the local build ad-hoc, opens the app, and writes a setup log to `.build/install.log`.
 
@@ -141,11 +158,11 @@ The terminal script performs the same install/update flow as the double-click ve
 
 ## Requirements
 
-| Requirement | Version |
-| --- | --- |
-| macOS | 14 Sonoma or newer |
-| Xcode | 15 or newer |
-| Swift | 5.9 |
+|  | Requirement | Version |
+| --- | --- | --- |
+| 🍎 | macOS | 14 Sonoma or newer |
+| 🧰 | Xcode | 15 or newer |
+| 🦅 | Swift | 5.9 |
 
 <details>
 <summary>Why Xcode?</summary>
@@ -228,19 +245,22 @@ The app enables:
 These entitlements allow sandboxed read/write access to files selected by the user.
 </details>
 
-## Testing Checklist
+## Quality Checks
 
-Before shipping a build, verify:
+Before shipping a build, verify the app from both sides: the developer path and the human-with-documents path.
 
-- Drag-and-drop import with multiple supported file types.
-- Password-protected PDF unlock flow.
-- Save and reopen of `.pdfoldproj` packages.
-- Search results across combined documents.
-- Annotation tools and undo behavior.
-- Page rotation, deletion, and reordering.
-- Plain PDF export.
-- PDFold bundle export.
-- Desktop launcher opens the installed app after running the Mac installer.
+|  | Check | What To Verify |
+| --- | --- | --- |
+| ✅ | Build | `xcodebuild` completes for the `PDFold` scheme |
+| 🧪 | Installer smoke test | `./scripts/install-mac.sh --no-open` builds, signs, installs, and refreshes the launcher |
+| 📥 | Import | Drag-and-drop works with multiple supported file types |
+| 🔑 | Protected PDFs | Password-protected PDFs show the unlock flow |
+| 💾 | Persistence | `.pdfoldproj` packages save and reopen correctly |
+| 🔎 | Search | Search results work across the combined workspace |
+| ✍️ | Annotation | Highlight, note, ink, underline, strikeout, and undo behavior work |
+| 🗂️ | Pages | Page rotation, deletion, and reordering behave correctly |
+| 📤 | Export | Plain PDF and PDFold bundle export complete successfully |
+| 🚀 | Launch | Desktop launcher opens the installed app after running the installer |
 
 ## Roadmap
 
