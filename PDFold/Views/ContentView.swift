@@ -22,7 +22,7 @@ struct ContentView: View {
             } else {
                 NavigationSplitView(columnVisibility: $columnVisibility) {
                     SidebarView(viewModel: viewModel)
-                        .navigationSplitViewColumnWidth(min: 180, ideal: 240, max: 320)
+                        .navigationSplitViewColumnWidth(min: 210, ideal: 270, max: 340)
                 } detail: {
                     HStack(spacing: 0) {
                         ReadingCanvas(viewModel: viewModel)
@@ -39,6 +39,7 @@ struct ContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.18), value: viewModel.document.workspace.documents.isEmpty)
+        .tint(Color.accentColor)
         .onDrop(of: WorkspaceDocument.importableContentTypes + [.fileURL], isTargeted: nil, perform: handleDrop)
         .onAppear { viewModel.undoManager = undoManager }
         .onChange(of: undoManager) { _, um in viewModel.undoManager = um }
@@ -88,7 +89,9 @@ struct ContentView: View {
     @ToolbarContentBuilder
     private var mainToolbar: some ToolbarContent {
         // Leading: add source files
-        ToolbarItem(placement: .navigation) {
+        ToolbarItemGroup(placement: .navigation) {
+            AppIconMark(size: 24)
+
             Button { openFiles() } label: {
                 Label("Add Files", systemImage: "plus.circle")
             }
@@ -128,6 +131,8 @@ struct ContentView: View {
             }
             .help("Search workspace (⌘F)")
             .keyboardShortcut("f", modifiers: .command)
+
+            GuideButton(autoShow: true)
 
             Button { showInspector.toggle() } label: {
                 Label("Inspector", systemImage: "sidebar.right")

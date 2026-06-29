@@ -43,6 +43,8 @@ final class WorkspaceViewModel {
     var searchQuery = ""
     var searchResults: [PDFSelection] = []
     var pendingSignatureData: Data? = nil
+    var selectedPageRefID: UUID? = nil
+    var draggedPageRefID: UUID? = nil
 
     weak var undoManager: UndoManager?
 
@@ -184,6 +186,50 @@ final class WorkspaceViewModel {
         document.workspace.pageOrder = document.workspace.documents.flatMap { member in
             document.workspace.pageOrder.filter { $0.memberDocId == member.id }
         }
+    }
+
+    func selectPage(_ ref: PageRef) {
+        selectedPageRefID = ref.id
+        if let pageIndex = combinedPageIndex(for: ref) {
+            NotificationCenter.default.post(name: .pdfoldJumpToPageIndex, object: pageIndex)
+        }
+    }
+
+    func combinedPageIndex(for ref: PageRef) -> Int? {
+        var combinedIndex = 0
+        for member in document.workspace.documents {
+            combinedIndex += 1  // source-file banner page
+            if member.id == ref.memberDocId {
+                guard let localIndex = member.pageRefs.firstIndex(of: ref.id) else { return nil }
+                return combinedIndex + localIndex
+            }
+            combinedIndex += member.pageRefs.count
+        }
+        return nil
+    }
+
+    func beginDraggingPage(_ ref: PageRef) {
+        draggedPageRefID = ref.id
+    }
+
+    func moveDraggedPage(to targetRef: PageRef) -> Bool {
+        guard let draggedPageRefID,
+              draggedPageRefID != targetRef.id,
+              let sourceRef = document.workspace.pageOrder.first(where: { $0.id == draggedPageRefID }),
+              sourceRef.memberDocId == targetRef.memberDocId,
+              let memberIndex = document.workspace.documents.firstIndex(where: { $0.id == targetRef.memberDocId }),
+              let sourceIndex = document.workspace.documents[memberIndex].pageRefs.firstIndex(of: sourceRef.id),
+              let targetIndex = document.workspace.documents[memberIndex].pageRefs.firstIndex(of: targetRef.id)
+        else {
+            self.draggedPageRefID = nil
+            return false
+        }
+
+        let destination = targetIndex > sourceIndex ? targetIndex + 1 : targetIndex
+        movePage(sourceRef, toIndex: destination)
+        selectedPageRefID = sourceRef.id
+        self.draggedPageRefID = nil
+        return true
     }
 
     // MARK: - Annotations

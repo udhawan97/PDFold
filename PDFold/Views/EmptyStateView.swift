@@ -6,60 +6,74 @@ struct EmptyStateView: View {
     @State private var isDropTargeted = false
 
     var body: some View {
-        ZStack {
-            Color(nsColor: .windowBackgroundColor)
+        ZStack(alignment: .topTrailing) {
+            Color(nsColor: .controlBackgroundColor)
                 .ignoresSafeArea()
 
-            VStack(spacing: 28) {
-                // Icon
-                ZStack {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(Color.accentColor.opacity(0.10))
-                        .frame(width: 96, height: 96)
-                    Image(systemName: "doc.on.doc.fill")
-                        .font(.system(size: 44, weight: .light))
+            VStack(spacing: 30) {
+                VStack(spacing: 16) {
+                    AppIconMark(size: 88)
+
+                    VStack(spacing: 7) {
+                        Text("PDFold")
+                            .font(.system(size: 34, weight: .semibold, design: .rounded))
+                        Text("Combine, arrange, annotate, and export documents in one focused workspace.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(2)
+                            .frame(maxWidth: 420)
+                    }
+                }
+
+                VStack(spacing: 16) {
+                    Image(systemName: isDropTargeted ? "tray.and.arrow.down.fill" : "doc.badge.plus")
+                        .font(.system(size: 30, weight: .regular))
                         .foregroundStyle(Color.accentColor)
                         .symbolRenderingMode(.hierarchical)
-                }
 
-                VStack(spacing: 8) {
-                    Text("Drag files here")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    Text("Drop PDF, Word, HTML, text, or image files to start a workspace.\nCombine, annotate, and sign them as one document.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(3)
-                }
+                    VStack(spacing: 5) {
+                        Text(isDropTargeted ? "Release to import" : "Drop files to begin")
+                            .font(.title3.weight(.semibold))
+                        Text("PDF, Word, HTML, text, CSV, JSON, XML, and images are supported.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
 
-                HStack(spacing: 12) {
                     Button {
                         openFiles()
                     } label: {
-                        Label("Open Files…", systemImage: "folder.badge.plus")
-                            .frame(minWidth: 130)
+                        Label("Choose Files", systemImage: "folder.badge.plus")
+                            .frame(minWidth: 142)
                     }
                     .controlSize(.large)
                     .buttonStyle(.borderedProminent)
-
-                    Button {
-                        // new blank workspace - already have one
-                    } label: {
-                        Label("New Workspace", systemImage: "plus")
-                            .frame(minWidth: 130)
-                    }
-                    .controlSize(.large)
-                    .buttonStyle(.bordered)
                 }
+                .padding(.horizontal, 42)
+                .padding(.vertical, 34)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(
+                            isDropTargeted ? Color.accentColor : Color.primary.opacity(0.08),
+                            lineWidth: isDropTargeted ? 2 : 1
+                        )
+                }
+                .shadow(color: .black.opacity(0.06), radius: 24, x: 0, y: 12)
             }
             .padding(56)
+
+            GuideButton(autoShow: true)
+                .buttonStyle(.borderless)
+                .font(.title3)
+                .padding(22)
         }
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(
                     Color.accentColor,
-                    lineWidth: isDropTargeted ? 2.5 : 0
+                    lineWidth: isDropTargeted ? 1.5 : 0
                 )
                 .padding(12)
                 .animation(.easeInOut(duration: 0.12), value: isDropTargeted)

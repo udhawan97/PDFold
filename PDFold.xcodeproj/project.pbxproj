@@ -23,6 +23,7 @@
 		8118B9E40222205B59BFEA95 /* MemberDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21406CD791971A026B6A285 /* MemberDocument.swift */; };
 		976F39BDDA9E42A215D88353 /* WorkspaceDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04448B1CCE672C13D52392B1 /* WorkspaceDocument.swift */; };
 		97C573B73A6CC4FCA36ACFC6 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45D6F51A2DFB7D860374B43 /* SearchView.swift */; };
+		B083EBE61135CF3C90CE7D3D /* GuidePopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10CDA157C78EF952ADF98CF9 /* GuidePopover.swift */; };
 		B30400477B2629A199CAE75B /* PasswordPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B768FD261E14C648AC8312EF /* PasswordPromptView.swift */; };
 		B5E88EF7CB2E9E5C9F627940 /* Workspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF9FEA37A2C8446DD2FAA57B /* Workspace.swift */; };
 		B937492F5A9B6525FD516F03 /* PageRef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9304378D6348FB81960551B5 /* PageRef.swift */; };
@@ -39,6 +40,7 @@
 		04448B1CCE672C13D52392B1 /* WorkspaceDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceDocument.swift; sourceTree = "<group>"; };
 		062B11437A890C3344D88298 /* BoundaryPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoundaryPage.swift; sourceTree = "<group>"; };
 		108F80780D043A5E84254B45 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		10CDA157C78EF952ADF98CF9 /* GuidePopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidePopover.swift; sourceTree = "<group>"; };
 		10F92B037079D607E9FC1F8D /* PDFoldApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFoldApp.swift; sourceTree = "<group>"; };
 		283B69ED3FF6E997889BB375 /* TOCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TOCView.swift; sourceTree = "<group>"; };
 		48261BB994A895CFA9A07CE0 /* AppToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppToolbar.swift; sourceTree = "<group>"; };
@@ -99,6 +101,7 @@
 				48261BB994A895CFA9A07CE0 /* AppToolbar.swift */,
 				93C213D7BF6D3264E18EB458 /* ContentView.swift */,
 				92C4739CB79025BE3763E623 /* EmptyStateView.swift */,
+				10CDA157C78EF952ADF98CF9 /* GuidePopover.swift */,
 				532E4CABAC0F8B4664C810DE /* InspectorView.swift */,
 				B768FD261E14C648AC8312EF /* PasswordPromptView.swift */,
 				52DE2C15407429070EAC6A29 /* ReadingCanvas.swift */,
@@ -250,6 +253,7 @@
 				376ED70FB3F09DF6B3F65E70 /* BoundaryPage.swift in Sources */,
 				BB8959F2285A83728B364BCC /* ContentView.swift in Sources */,
 				79BDC616455ED84B90BB2DB9 /* EmptyStateView.swift in Sources */,
+				B083EBE61135CF3C90CE7D3D /* GuidePopover.swift in Sources */,
 				23FC0C344110D094998B9C83 /* InspectorView.swift in Sources */,
 				0E646E5022E681C962C54939 /* ManifestReader.swift in Sources */,
 				8118B9E40222205B59BFEA95 /* MemberDocument.swift in Sources */,
