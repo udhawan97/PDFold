@@ -211,6 +211,8 @@ write_info_plist() {
     /usr/libexec/PlistBuddy -c "Set :CFBundleExecutable $APP_NAME" "$plist"
     /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.ud.PDFold" "$plist"
     /usr/libexec/PlistBuddy -c "Set :CFBundleName $APP_NAME" "$plist"
+    /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" "$plist" 2>/dev/null \
+        || /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string AppIcon" "$plist"
 }
 
 build_from_source() {

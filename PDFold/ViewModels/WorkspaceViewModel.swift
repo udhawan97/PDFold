@@ -273,11 +273,44 @@ final class WorkspaceViewModel {
 
     func rebuild() {
         combinedPDF = engine.concatenate(documents: loadedPDFs, includeBanners: true)
-        pageCount = combinedPDF.pageCount
+        pageCount = document.workspace.pageOrder.count
         // PDFSelections are bound to the old document; drop them so search navigation
         // doesn't jump to pages in a detached doc.
         searchResults = []
         searchResultIndex = -1
+    }
+
+    func combinedPageIndex(forWorkspacePageNumber pageNumber: Int) -> Int? {
+        guard pageNumber >= 1, pageNumber <= pageCount else { return nil }
+        var workspacePageNumber = 0
+        for combinedIndex in 0..<combinedPDF.pageCount {
+            guard let page = combinedPDF.page(at: combinedIndex),
+                  !(page is BoundaryPage) else { continue }
+            workspacePageNumber += 1
+            if workspacePageNumber == pageNumber {
+                return combinedIndex
+            }
+        }
+        return nil
+    }
+
+    func workspacePageNumber(for page: PDFPage, in document: PDFDocument) -> Int {
+        guard pageCount > 0 else { return 0 }
+        let combinedIndex = document.index(for: page)
+        guard combinedIndex != NSNotFound else { return 1 }
+
+        var realPagesThroughCurrentPosition = 0
+        for index in 0...combinedIndex {
+            if let candidate = document.page(at: index),
+               !(candidate is BoundaryPage) {
+                realPagesThroughCurrentPosition += 1
+            }
+        }
+
+        if page is BoundaryPage {
+            return min(max(realPagesThroughCurrentPosition + 1, 1), pageCount)
+        }
+        return min(max(realPagesThroughCurrentPosition, 1), pageCount)
     }
 
     // MARK: - Reorder / Remove (with undo)

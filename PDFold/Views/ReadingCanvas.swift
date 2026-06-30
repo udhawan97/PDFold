@@ -64,8 +64,9 @@ private struct ZoomPageBar: View {
                         .frame(width: 30)
                         .focused($pageFieldFocused)
                         .onSubmit {
-                            if let n = Int(pageInput), n >= 1, n <= viewModel.pageCount {
-                                NotificationCenter.default.post(name: .pdfoldJumpToPageIndex, object: n - 1)
+                            if let n = Int(pageInput),
+                               let combinedIndex = viewModel.combinedPageIndex(forWorkspacePageNumber: n) {
+                                NotificationCenter.default.post(name: .pdfoldJumpToPageIndex, object: combinedIndex)
                             } else {
                                 pageInput = "\(viewModel.currentPageNumber)"
                             }
@@ -333,8 +334,7 @@ struct PDFViewRepresentable: NSViewRepresentable {
         @objc func pageChanged(_ notification: Notification) {
             guard let pdfView, let doc = pdfView.document,
                   let page = pdfView.currentPage else { return }
-            let idx = doc.index(for: page)
-            viewModel.currentPageNumber = idx + 1
+            viewModel.currentPageNumber = viewModel.workspacePageNumber(for: page, in: doc)
         }
 
         func setupInkOverlay() {
