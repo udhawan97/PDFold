@@ -131,12 +131,28 @@ PDFold brings that fragmented process into one focused workspace, making documen
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    Files["Source files<br/>PDF, Word, HTML, text, images"]
+    UI["SwiftUI app<br/>sidebar, reader, inspector"]
+    State["Workspace state<br/>documents, pages, tags, comments"]
+    Engine["PDFKit engine<br/>convert, compose, annotate"]
+    Package["Local package<br/>.pdfoldproj"]
+    Export["Export artifacts<br/>PDF, DOCX, TXT, HTML, PNG, JPG"]
+
+    Files --> UI
+    UI --> State
+    State --> Engine
+    Engine <--> Package
+    Engine --> Export
+```
+
 <p align="center">
   <img src="docs/assets/pdfold-v2-architecture-diagram.svg" alt="PDFold v2 architecture diagram showing the SwiftUI app layer, PDFKit document engine, local artifacts, installer path, and stability guards">
 </p>
 
 <p align="center">
-  <em>Native SwiftUI interface on top of a local PDFKit document engine, with editable packages and export artifacts written on your Mac.</em>
+  <em>High-level flow first, then the implementation view: SwiftUI views, observable workspace state, PDFKit services, local packages, exports, and release guardrails.</em>
 </p>
 
 |  | Layer | Responsibility |
