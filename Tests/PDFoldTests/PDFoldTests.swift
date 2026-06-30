@@ -162,6 +162,29 @@ final class PDFTextEditingRedesignTests: XCTestCase {
         XCTAssertEqual(viewModel.document.workspace.pageEditStates.first?.operations.first?.replacementText, "Replacement text")
         XCTAssertNotNil(viewModel.loadedPDFs.first?.1.page(at: 0))
     }
+
+    func testEditableTextBlockFallsBackToInlineInsertionWithoutWarning() throws {
+        let fixture = try makeMemberWithPDF(name: "Editable", pageTexts: ["Known text"])
+        let document = WorkspaceDocument()
+        document.workspace.documents = [fixture.member]
+        document.workspace.pageOrder = fixture.refs
+        document.memberPDFData[fixture.member.id] = fixture.pdfData
+        let viewModel = WorkspaceViewModel(
+            document: document,
+            processingEngine: PDFKitProcessingEngineFallback()
+        )
+        let page = try XCTUnwrap(viewModel.loadedPDFs.first?.1.page(at: 0))
+        let target = try XCTUnwrap(viewModel.editableTextBlock(
+            at: CGPoint(x: 500, y: 120),
+            on: page,
+            in: viewModel.combinedPDF
+        ))
+
+        XCTAssertEqual(target.pageRef.id, fixture.refs[0].id)
+        XCTAssertEqual(target.block.text, "")
+        XCTAssertEqual(target.block.confidence, .medium)
+        XCTAssertNil(viewModel.editingStatus)
+    }
 }
 
 final class DocumentImportConverterTests: XCTestCase {

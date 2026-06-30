@@ -576,15 +576,44 @@ final class WorkspaceViewModel {
             return nil
         }
         let analysis = textAnalysis(for: ref, page: page, memberID: ref.memberDocId, localIndex: localIdx)
-        guard let block = textAnalysisEngine.hitTest(pagePoint, in: analysis) else {
-            if analysis.blocks.isEmpty {
-                showEditMessage("PDFold could not find editable text on this page. Scanned pages need OCR before inline editing.", isError: false)
-            } else {
-                showEditMessage("That part of the PDF has low-confidence text extraction, so PDFold will keep using the fallback text box flow.", isError: false)
-            }
-            return nil
-        }
+        let block = textAnalysisEngine.hitTest(pagePoint, in: analysis) ?? insertionTextBlock(at: pagePoint, pageRefID: ref.id, page: page)
         return (ref, block)
+    }
+
+    private func insertionTextBlock(at pagePoint: CGPoint, pageRefID: UUID, page: PDFPage) -> EditableTextBlock {
+        let pageBounds = page.bounds(for: .cropBox)
+        let width = min(max(pageBounds.width * 0.34, 180), 320)
+        let height: CGFloat = 24
+        var bounds = CGRect(
+            x: pagePoint.x,
+            y: pagePoint.y - height,
+            width: width,
+            height: height
+        )
+        if bounds.maxX > pageBounds.maxX - 12 {
+            bounds.origin.x = max(pageBounds.minX + 12, pageBounds.maxX - width - 12)
+        }
+        if bounds.minX < pageBounds.minX + 12 {
+            bounds.origin.x = pageBounds.minX + 12
+        }
+        if bounds.minY < pageBounds.minY + 12 {
+            bounds.origin.y = pageBounds.minY + 12
+        }
+        if bounds.maxY > pageBounds.maxY - 12 {
+            bounds.origin.y = pageBounds.maxY - height - 12
+        }
+        return EditableTextBlock(
+            pageRefID: pageRefID,
+            text: "",
+            bounds: bounds,
+            lines: [],
+            fontName: "Helvetica",
+            fontSize: 14,
+            textColor: .documentText,
+            rotation: CGFloat(page.rotation),
+            baseline: bounds.minY,
+            confidence: .medium
+        )
     }
 
     @discardableResult

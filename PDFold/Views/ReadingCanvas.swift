@@ -291,15 +291,8 @@ struct PDFViewRepresentable: NSViewRepresentable {
                 }
             case .editText:
                 inlineEditor?.cancel()
-                if let ann = page.annotation(at: pagePoint), ann.type == "FreeText" {
-                    let rect = pdfView.convert(ann.bounds, from: page)
-                    showNoteEditor(for: ann, near: rect, in: pdfView)
-                } else if let target = viewModel.editableTextBlock(at: pagePoint, on: page, in: pdfView.document) {
+                if let target = viewModel.editableTextBlock(at: pagePoint, on: page, in: pdfView.document) {
                     showInlineTextEditor(for: target.block, pageRef: target.pageRef, on: page, in: pdfView)
-                } else {
-                    guard let ann = viewModel.addTextBox(at: pagePoint, on: page) else { return }
-                    let rect = pdfView.convert(ann.bounds, from: page)
-                    showNoteEditor(for: ann, near: rect, in: pdfView)
                 }
             case .signature:
                 if let signatureData = viewModel.pendingSignatureData {
@@ -362,11 +355,11 @@ struct PDFViewRepresentable: NSViewRepresentable {
                 page: page,
                 pageRef: pageRef,
                 block: block
-            ) { [weak self] result in
+            ) { [weak self, weak pdfView] result in
                 guard let self else { return }
                 switch result {
                 case .commit(let edit):
-                    _ = viewModel.applyInlineTextEdit(
+                    let didApply = viewModel.applyInlineTextEdit(
                         pageRef: edit.pageRef,
                         sourceBlock: edit.block,
                         replacementText: edit.text,
@@ -376,6 +369,10 @@ struct PDFViewRepresentable: NSViewRepresentable {
                         textColor: edit.textColor,
                         alignment: edit.alignment
                     )
+                    if didApply {
+                        pdfView?.document = viewModel.combinedPDF
+                        pdfView?.needsDisplay = true
+                    }
                 case .cancel:
                     break
                 }
@@ -919,6 +916,7 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
     private var editorTextColor: NSColor
     private var editorAlignment: NSTextAlignment = .left
     private var didFinish = false
+    private var editorTopY: CGFloat = 0
 
     init(
         frame: CGRect,
@@ -945,7 +943,11 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
 
     func beginEditing() {
         window?.makeFirstResponder(textView)
-        textView.selectAll(nil)
+        if textView.string.isEmpty {
+            textView.setSelectedRange(NSRange(location: 0, length: 0))
+        } else {
+            textView.selectAll(nil)
+        }
     }
 
     func cancel() {
@@ -983,6 +985,9 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
         textView.insertionPointColor = .dsAccentNS
         textView.textContainerInset = NSSize(width: 3, height: 2)
         textView.textContainer?.lineFragmentPadding = 0
+        textView.isHorizontallyResizable = false
+        textView.isVerticallyResizable = true
+        textView.autoresizingMask = []
         textView.wantsLayer = true
         textView.layer?.borderWidth = 1
         textView.layer?.borderColor = NSColor.dsAccentNS.withAlphaComponent(0.75).cgColor
@@ -1080,6 +1085,7 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
             width: max(minWidth, sourceRect.width),
             height: max(sourceRect.height + 6, editorFontSize * 1.5)
         )
+        editorTopY = editorRect.maxY
         patchView.frame = sourceRect.insetBy(dx: -2, dy: -2)
         textView.frame = editorRect
         toolbar.frame = toolbarFrame(near: editorRect)
@@ -1101,7 +1107,9 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
         layoutManager.ensureLayout(for: textContainer)
         let used = layoutManager.usedRect(for: textContainer)
         var frame = textView.frame
-        frame.size.height = max(block.bounds.height, ceil(used.height + textView.textContainerInset.height * 2 + 4))
+        let minimumHeight = max(24, ceil(editorFontSize * 1.55))
+        frame.size.height = max(minimumHeight, ceil(used.height + textView.textContainerInset.height * 2 + 4))
+        frame.origin.y = editorTopY - frame.height
         textView.frame = frame
         toolbar.frame = toolbarFrame(near: frame)
         resizeHandle.frame = CGRect(x: frame.maxX - 5, y: frame.minY - 5, width: 10, height: 10)
@@ -1111,6 +1119,7 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
         var frame = textView.frame
         frame.size.width = max(48, frame.width + deltaX)
         textView.frame = frame
+        textView.textContainer?.containerSize = NSSize(width: frame.width - textView.textContainerInset.width * 2, height: CGFloat.infinity)
         resizeTextViewHeight()
     }
 
