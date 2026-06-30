@@ -1,0 +1,148 @@
+<svg width="1440" height="760" viewBox="0 0 1440 760" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">PDFold v2 Workspace Overview</title>
+  <desc id="desc">A dark dashboard-style diagram showing PDFold importing scattered files, organizing them in a native workspace, applying markup and metadata, then exporting final artifacts.</desc>
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="45%" r="70%">
+      <stop offset="0%" stop-color="#0F766E" stop-opacity="0.34"/>
+      <stop offset="45%" stop-color="#0F172A" stop-opacity="0.78"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </radialGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#172033"/>
+      <stop offset="100%" stop-color="#0B1120"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="55%" stop-color="#2DD4BF"/>
+      <stop offset="100%" stop-color="#A7F3D0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="24" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+    <pattern id="grid" width="58" height="58" patternUnits="userSpaceOnUse">
+      <path d="M 58 0 L 0 0 0 58" stroke="#203047" stroke-width="1" opacity="0.35"/>
+    </pattern>
+    <style>
+      .label { font: 700 20px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #F8FAFC; }
+      .sub { font: 500 14px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #94A3B8; }
+      .mono { font: 700 13px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: 2px; fill: #67E8F9; }
+      .tiny { font: 600 12px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #64748B; }
+      .metric { font: 800 42px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; fill: #34D399; }
+      .card { fill: url(#panel); stroke: #26364F; stroke-width: 1.4; }
+      .soft { fill: #0F172A; stroke: #26364F; stroke-width: 1.3; }
+      .line { stroke: #38BDF8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="760" rx="28" fill="#020617"/>
+  <rect x="28" y="28" width="1384" height="704" rx="24" fill="url(#glow)"/>
+  <rect x="28" y="28" width="1384" height="704" rx="24" fill="url(#grid)" opacity="0.75"/>
+
+  <g transform="translate(82 72)">
+    <rect x="0" y="0" width="58" height="58" rx="16" fill="#101B2E" stroke="#27415F" stroke-width="2"/>
+    <path d="M21 15h15l9 9v19H21V15Z" fill="#0EA5E9" opacity="0.78"/>
+    <path d="M36 15v10h9" stroke="#A7F3D0" stroke-width="2"/>
+    <circle cx="42" cy="43" r="6" fill="#34D399"/>
+    <text x="78" y="27" class="label" font-size="26">PDFold v2</text>
+    <text x="78" y="51" class="sub">Local-first document assembly workspace</text>
+  </g>
+
+  <g transform="translate(1012 78)">
+    <text x="0" y="0" class="tiny">WORKSPACE PACKAGE</text>
+    <text x="0" y="34" class="metric">.pdfoldproj</text>
+    <text x="0" y="62" class="sub">metadata + source PDF data + markup</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="86" y="220" width="360" height="360" rx="22" class="card"/>
+    <text x="118" y="262" class="mono">INPUTS</text>
+    <text x="118" y="294" class="label">Scattered files</text>
+    <text x="118" y="322" class="sub">Drop in real document chaos</text>
+
+    <g transform="translate(120 358)">
+      <rect x="0" y="0" width="96" height="74" rx="14" fill="#10243B" stroke="#1D4ED8"/>
+      <text x="22" y="32" class="label" font-size="19">PDF</text>
+      <text x="18" y="53" class="tiny">forms</text>
+      <rect x="120" y="0" width="96" height="74" rx="14" fill="#132235" stroke="#0E7490"/>
+      <text x="22" y="32" class="label" font-size="19">DOCX</text>
+      <text x="15" y="53" class="tiny">briefs</text>
+      <rect x="240" y="0" width="96" height="74" rx="14" fill="#11281F" stroke="#059669"/>
+      <text x="22" y="32" class="label" font-size="19">HTML</text>
+      <text x="21" y="53" class="tiny">pages</text>
+    </g>
+
+    <g transform="translate(120 454)">
+      <rect x="0" y="0" width="96" height="74" rx="14" fill="#231A36" stroke="#7C3AED"/>
+      <text x="23" y="32" class="label" font-size="19">TXT</text>
+      <text x="14" y="53" class="tiny">notes</text>
+      <rect x="120" y="0" width="96" height="74" rx="14" fill="#2A1F13" stroke="#D97706"/>
+      <text x="22" y="32" class="label" font-size="19">CSV</text>
+      <text x="13" y="53" class="tiny">data</text>
+      <rect x="240" y="0" width="96" height="74" rx="14" fill="#271521" stroke="#DB2777"/>
+      <text x="22" y="32" class="label" font-size="19">IMG</text>
+      <text x="10" y="53" class="tiny">scans</text>
+    </g>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="508" y="172" width="424" height="444" rx="24" class="card"/>
+    <text x="544" y="214" class="mono">NATIVE MAC WORKSPACE</text>
+    <text x="544" y="250" class="label" font-size="28">Read, arrange, mark up</text>
+    <text x="544" y="278" class="sub">SwiftUI shell + PDFKit canvas + document model</text>
+
+    <rect x="544" y="324" width="110" height="216" rx="16" class="soft"/>
+    <text x="566" y="356" class="label" font-size="17">Sidebar</text>
+    <rect x="566" y="384" width="66" height="42" rx="8" fill="#1E293B" stroke="#334155"/>
+    <rect x="566" y="442" width="66" height="42" rx="8" fill="#1E293B" stroke="#334155"/>
+    <rect x="566" y="500" width="66" height="18" rx="5" fill="#334155"/>
+
+    <rect x="678" y="324" width="132" height="216" rx="16" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <rect x="696" y="348" width="96" height="18" rx="5" fill="#CBD5E1"/>
+    <rect x="696" y="386" width="96" height="8" rx="4" fill="#94A3B8"/>
+    <rect x="696" y="408" width="80" height="8" rx="4" fill="#94A3B8"/>
+    <rect x="696" y="450" width="96" height="10" rx="5" fill="#FACC15" opacity="0.55"/>
+    <path d="M700 494 C722 478 752 526 786 496" stroke="#0F766E" stroke-width="4" stroke-linecap="round"/>
+
+    <rect x="834" y="324" width="62" height="216" rx="16" class="soft"/>
+    <text x="850" y="356" class="label" font-size="16">Info</text>
+    <circle cx="856" cy="389" r="5" fill="#22D3EE"/>
+    <rect x="870" y="384" width="18" height="8" rx="4" fill="#475569"/>
+    <circle cx="856" cy="423" r="5" fill="#34D399"/>
+    <rect x="870" y="418" width="18" height="8" rx="4" fill="#475569"/>
+    <circle cx="856" cy="457" r="5" fill="#A78BFA"/>
+    <rect x="870" y="452" width="18" height="8" rx="4" fill="#475569"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="986" y="194" width="348" height="160" rx="22" class="card"/>
+    <text x="1020" y="236" class="mono">MARKUP</text>
+    <text x="1020" y="270" class="label">Annotations that persist</text>
+    <text x="1020" y="300" class="sub">Highlight, note, editable text, ink, underline, strikeout, signature</text>
+    <path d="M1022 326 L1078 310 L1134 322 L1192 292 L1252 302 L1302 278" class="line"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="986" y="392" width="348" height="188" rx="22" class="card"/>
+    <text x="1020" y="434" class="mono">ARTIFACTS</text>
+    <text x="1020" y="466" class="label">Export clean output</text>
+    <g transform="translate(1020 496)">
+      <rect x="0" y="0" width="64" height="42" rx="11" fill="#123A33" stroke="#10B981"/>
+      <text x="18" y="27" class="label" font-size="16">PDF</text>
+      <rect x="76" y="0" width="70" height="42" rx="11" fill="#132A46" stroke="#38BDF8"/>
+      <text x="16" y="27" class="label" font-size="16">DOCX</text>
+      <rect x="158" y="0" width="64" height="42" rx="11" fill="#271A3A" stroke="#A78BFA"/>
+      <text x="18" y="27" class="label" font-size="16">TXT</text>
+      <rect x="234" y="0" width="74" height="42" rx="11" fill="#2A2110" stroke="#F59E0B"/>
+      <text x="15" y="27" class="label" font-size="16">PNG</text>
+    </g>
+  </g>
+
+  <path d="M456 398 C476 398 480 398 500 398" stroke="#22D3EE" stroke-width="3" stroke-linecap="round"/>
+  <path d="M490 388 L502 398 L490 408" stroke="#22D3EE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M934 388 C954 388 958 388 978 388" stroke="#2DD4BF" stroke-width="3" stroke-linecap="round"/>
+  <path d="M968 378 L980 388 L968 398" stroke="#2DD4BF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M934 478 C954 478 958 478 978 478" stroke="#2DD4BF" stroke-width="3" stroke-linecap="round"/>
+  <path d="M968 468 L980 478 L968 488" stroke="#2DD4BF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <text x="720" y="690" text-anchor="middle" class="sub" font-style="italic">Files stay local. Workspace state, markup, tags, comments, and exports stay on your Mac.</text>
+</svg>

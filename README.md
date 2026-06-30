@@ -121,31 +121,23 @@ PDFold brings that fragmented process into one focused workspace, making documen
 
 ## Product Flow
 
-```mermaid
-flowchart LR
-    A["Drop in files"] --> B["Convert supported inputs to PDF"]
-    B --> C["Build a PDFold workspace"]
-    C --> D["Read, search, reorder, annotate, tag, sign"]
-    D --> E{"Need to keep editing?"}
-    E -- "Yes" --> F["Save .pdfoldproj package"]
-    E -- "No" --> G["Export plain PDF"]
-```
+<p align="center">
+  <img src="docs/assets/pdfold-v2-workspace-diagram.svg" alt="PDFold v2 workspace overview showing imports, native workspace tools, markup, metadata, and export artifacts">
+</p>
+
+<p align="center">
+  <em>From scattered files to a local editable workspace, then out to clean shareable artifacts.</em>
+</p>
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    Files["User files<br/>PDF, Word, HTML, text, images"]
-    App["PDFold macOS app<br/>SwiftUI workspace"]
-    Engine["Document engine<br/>Convert, merge, annotate, search"]
-    Local["Local storage<br/>.pdfoldproj packages"]
-    Output["Exports<br/>PDF, Word, text, HTML, PNG, JPEG"]
+<p align="center">
+  <img src="docs/assets/pdfold-v2-architecture-diagram.svg" alt="PDFold v2 architecture diagram showing the SwiftUI app layer, PDFKit document engine, local artifacts, installer path, and stability guards">
+</p>
 
-    Files --> App
-    App --> Engine
-    Engine <--> Local
-    Engine --> Output
-```
+<p align="center">
+  <em>Native SwiftUI interface on top of a local PDFKit document engine, with editable packages and export artifacts written on your Mac.</em>
+</p>
 
 |  | Layer | Responsibility |
 | --- | --- | --- |

@@ -1,0 +1,146 @@
+<svg width="1440" height="860" viewBox="0 0 1440 860" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">PDFold v2 Architecture at a Glance</title>
+  <desc id="desc">A layered architecture diagram for PDFold showing the native SwiftUI app, PDFKit document engine, local artifacts, release guardrails, and installer workflow.</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="78%">
+      <stop offset="0%" stop-color="#12353B" stop-opacity="0.55"/>
+      <stop offset="55%" stop-color="#0B1120"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </radialGradient>
+    <linearGradient id="bluePanel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0F2747"/>
+      <stop offset="100%" stop-color="#0B172A"/>
+    </linearGradient>
+    <linearGradient id="greenPanel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#062F2B"/>
+      <stop offset="100%" stop-color="#071A18"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="20" stdDeviation="20" flood-color="#000000" flood-opacity="0.42"/>
+    </filter>
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M 60 0 L 0 0 0 60" stroke="#1E293B" stroke-width="1" opacity="0.5"/>
+    </pattern>
+    <style>
+      .title { font: 800 28px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #F8FAFC; }
+      .label { font: 800 19px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #F8FAFC; }
+      .sub { font: 500 14px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #94A3B8; }
+      .tiny { font: 700 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: 2px; fill: #60A5FA; }
+      .greenTiny { font: 700 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: 2px; fill: #34D399; }
+      .orangeTiny { font: 700 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: 2px; fill: #F59E0B; }
+      .layer { fill: rgba(15, 23, 42, 0.86); stroke: #334155; stroke-width: 1.5; }
+      .box { fill: #161B27; stroke: #3B4456; stroke-width: 1.4; }
+      .engine { fill: url(#bluePanel); stroke: #2563EB; stroke-width: 1.6; }
+      .local { fill: url(#greenPanel); stroke: #16A34A; stroke-width: 1.6; }
+      .artifact { fill: #211827; stroke: #8B5CF6; stroke-width: 1.5; }
+      .arrow { stroke: #64748B; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="860" rx="28" fill="#020617"/>
+  <rect x="28" y="28" width="1384" height="804" rx="24" fill="url(#bg)"/>
+  <rect x="28" y="28" width="1384" height="804" rx="24" fill="url(#grid)" opacity="0.62"/>
+
+  <text x="720" y="78" text-anchor="middle" class="title">PDFold v2 Architecture at a Glance</text>
+  <text x="720" y="108" text-anchor="middle" class="sub">Native SwiftUI app, PDFKit engine, editable local packages, and release-hardened document operations</text>
+
+  <g filter="url(#shadow)">
+    <rect x="92" y="148" width="1256" height="184" rx="24" class="layer"/>
+    <text x="124" y="188" class="tiny">NATIVE MAC APP - what the user sees and controls</text>
+    <text x="124" y="213" class="sub">SwiftUI document window, toolbar, sidebar, reader canvas, inspector, search, and export actions</text>
+
+    <g transform="translate(124 242)">
+      <rect x="0" y="0" width="220" height="62" rx="15" class="box"/>
+      <text x="110" y="27" text-anchor="middle" class="label">Workspace Shell</text>
+      <text x="110" y="48" text-anchor="middle" class="sub">DocumentGroup + toolbar</text>
+
+      <rect x="252" y="0" width="220" height="62" rx="15" class="box"/>
+      <text x="362" y="27" text-anchor="middle" class="label">Reader Canvas</text>
+      <text x="362" y="48" text-anchor="middle" class="sub">PDFView + zoom + page bar</text>
+
+      <rect x="504" y="0" width="220" height="62" rx="15" class="box"/>
+      <text x="614" y="27" text-anchor="middle" class="label">Sidebar</text>
+      <text x="614" y="48" text-anchor="middle" class="sub">documents + thumbnails</text>
+
+      <rect x="756" y="0" width="220" height="62" rx="15" class="box"/>
+      <text x="866" y="27" text-anchor="middle" class="label">Inspector</text>
+      <text x="866" y="48" text-anchor="middle" class="sub">info + tags + comments</text>
+
+      <rect x="1008" y="0" width="220" height="62" rx="15" class="box"/>
+      <text x="1118" y="27" text-anchor="middle" class="label">Search + Share</text>
+      <text x="1118" y="48" text-anchor="middle" class="sub">find, print, export</text>
+    </g>
+  </g>
+
+  <path d="M720 342 V386" class="arrow"/>
+  <path d="M707 374 L720 390 L733 374" class="arrow"/>
+  <text x="744" y="371" class="sub">UI actions call workspace model</text>
+
+  <g filter="url(#shadow)">
+    <rect x="92" y="396" width="1256" height="228" rx="24" class="engine"/>
+    <text x="124" y="436" class="tiny">DOCUMENT ENGINE - PDFKit, conversion, state, and guardrails</text>
+    <text x="124" y="461" class="sub">Runs locally on the Mac. No account, no remote upload pipeline, no cloud document processing.</text>
+
+    <g transform="translate(124 492)">
+      <rect x="0" y="0" width="220" height="78" rx="15" fill="#10243B" stroke="#38BDF8"/>
+      <text x="110" y="31" text-anchor="middle" class="label">Import Converter</text>
+      <text x="110" y="53" text-anchor="middle" class="sub">PDF, Word, HTML, text, data, images</text>
+
+      <rect x="252" y="0" width="220" height="78" rx="15" fill="#10243B" stroke="#38BDF8"/>
+      <text x="362" y="31" text-anchor="middle" class="label">PDF Composition</text>
+      <text x="362" y="53" text-anchor="middle" class="sub">banners, page map, combined PDF</text>
+
+      <rect x="504" y="0" width="220" height="78" rx="15" fill="#10243B" stroke="#38BDF8"/>
+      <text x="614" y="31" text-anchor="middle" class="label">Markup Tools</text>
+      <text x="614" y="53" text-anchor="middle" class="sub">highlight, text, ink, signature</text>
+
+      <rect x="756" y="0" width="220" height="78" rx="15" fill="#10243B" stroke="#38BDF8"/>
+      <text x="866" y="31" text-anchor="middle" class="label">Operations</text>
+      <text x="866" y="53" text-anchor="middle" class="sub">reorder, rotate, delete, undo</text>
+
+      <rect x="1008" y="0" width="220" height="78" rx="15" fill="#10243B" stroke="#38BDF8"/>
+      <text x="1118" y="31" text-anchor="middle" class="label">Export Writer</text>
+      <text x="1118" y="53" text-anchor="middle" class="sub">PDF, DOCX, TXT, HTML, PNG, JPG</text>
+    </g>
+
+    <g transform="translate(152 588)">
+      <rect x="0" y="0" width="516" height="58" rx="14" class="local"/>
+      <circle cx="28" cy="29" r="7" fill="#22C55E"/>
+      <text x="52" y="25" class="greenTiny">STABILITY GUARDS</text>
+      <text x="52" y="45" class="sub">oversized import rejection, serialization fallback, bounded image export</text>
+
+      <rect x="568" y="0" width="516" height="58" rx="14" fill="#2A1906" stroke="#D97706" stroke-width="1.6"/>
+      <circle cx="596" cy="29" r="7" fill="#F59E0B"/>
+      <text x="620" y="25" class="orangeTiny">INK CRASH REPAIR</text>
+      <text x="620" y="45" class="sub">PDFKit-native ink paths + malformed legacy ink sanitizer</text>
+    </g>
+  </g>
+
+  <path d="M720 634 V678" class="arrow"/>
+  <path d="M707 666 L720 682 L733 666" class="arrow"/>
+  <text x="744" y="663" class="sub">read and write local artifacts</text>
+
+  <g filter="url(#shadow)">
+    <rect x="92" y="690" width="1256" height="110" rx="24" fill="#0B1120" stroke="#334155" stroke-width="1.5"/>
+    <text x="124" y="730" class="tiny">LOCAL ARTIFACTS - files on your Mac</text>
+
+    <g transform="translate(124 748)">
+      <rect x="0" y="0" width="220" height="34" rx="10" class="artifact"/>
+      <text x="110" y="23" text-anchor="middle" class="label" font-size="16">.pdfoldproj package</text>
+
+      <rect x="252" y="0" width="220" height="34" rx="10" class="artifact"/>
+      <text x="362" y="23" text-anchor="middle" class="label" font-size="16">workspace.json</text>
+
+      <rect x="504" y="0" width="220" height="34" rx="10" class="artifact"/>
+      <text x="614" y="23" text-anchor="middle" class="label" font-size="16">source PDFs</text>
+
+      <rect x="756" y="0" width="220" height="34" rx="10" class="artifact"/>
+      <text x="866" y="23" text-anchor="middle" class="label" font-size="16">export files</text>
+
+      <rect x="1008" y="0" width="220" height="34" rx="10" class="artifact"/>
+      <text x="1118" y="23" text-anchor="middle" class="label" font-size="16">installer logs</text>
+    </g>
+  </g>
+
+  <text x="720" y="832" text-anchor="middle" class="sub">Distribution: source repo + local installer/updater. Build path: Swift Package, Xcode project, ad-hoc local signing.</text>
+</svg>
