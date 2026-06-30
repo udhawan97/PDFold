@@ -143,6 +143,7 @@ final class WorkspaceViewModel {
     var pendingSignatureData: Data? = nil
     var selectedPageRefID: UUID? = nil
     var draggedPageRefID: UUID? = nil
+    var editingStatus: EditingStatus? = nil
 
     // MARK: - Annotation colors (curated palette)
     var annotationColor: NSColor = .dsAnnotationYellow   // highlight, note, underline, strikeout
@@ -165,6 +166,7 @@ final class WorkspaceViewModel {
     private let engine: PDFEngine
     private let processingEngine: PDFProcessingEngine
     static let textReplacementAnnotationKey = PDFAnnotationKey(rawValue: "/PDFoldTextReplacement")
+    static let draftTextAnnotationKey = PDFAnnotationKey(rawValue: "/PDFoldDraftText")
 
     struct ImportError: Identifiable {
         let id = UUID()
@@ -175,6 +177,26 @@ final class WorkspaceViewModel {
     struct ExportError: Identifiable {
         let id = UUID()
         var message: String
+    }
+
+    struct EditingStatus: Identifiable, Equatable {
+        let id = UUID()
+        var message: String
+        var isError: Bool
+
+        static func warning(_ message: String) -> EditingStatus {
+            EditingStatus(message: message, isError: false)
+        }
+
+        static func error(_ message: String) -> EditingStatus {
+            EditingStatus(message: message, isError: true)
+        }
+
+        static func == (lhs: EditingStatus, rhs: EditingStatus) -> Bool {
+            lhs.id == rhs.id &&
+            lhs.message == rhs.message &&
+            lhs.isError == rhs.isError
+        }
     }
 
     // MARK: - Init
@@ -206,6 +228,7 @@ final class WorkspaceViewModel {
                 if let data = pdf.dataRepresentation() {
                     result[member.id] = data
                 } else if let existingData = self.document.memberPDFData[member.id] {
+                    self.showEditWarning(.serializationFailed)
                     result[member.id] = existingData
                 }
             }
@@ -400,6 +423,8 @@ final class WorkspaceViewModel {
         for (member, pdf) in loadedPDFs {
             if let data = pdf.dataRepresentation() {
                 result[member.id] = data
+            } else if let existingData = document.memberPDFData[member.id] {
+                result[member.id] = existingData
             }
         }
         return result
@@ -565,18 +590,22 @@ final class WorkspaceViewModel {
     }
 
     @discardableResult
-    func addTextBox(at pagePoint: CGPoint, on page: PDFPage) -> PDFAnnotation {
-        let size = CGSize(width: 160, height: 48)
-        let bounds = CGRect(x: pagePoint.x - size.width / 2,
-                            y: pagePoint.y - size.height / 2,
-                            width: size.width,
-                            height: size.height)
+    func addTextBox(at pagePoint: CGPoint, on page: PDFPage) -> PDFAnnotation? {
+        let bounds = PDFEditingSupport.textBoxBounds(
+            centeredAt: pagePoint,
+            pageBounds: page.bounds(for: .cropBox)
+        )
+        guard PDFEditingSupport.isValidPDFBounds(bounds) else {
+            showEditWarning(.invalidAnnotationBounds)
+            return nil
+        }
         let ann = PDFAnnotation(bounds: bounds, forType: .freeText, withProperties: nil)
         ann.contents = ""
         ann.font = .systemFont(ofSize: 16)
         ann.fontColor = .dsTextPrimaryNS
         ann.color = .clear
         ann.alignment = .left
+        ann.setValue(true, forAnnotationKey: Self.draftTextAnnotationKey)
         let border = PDFBorder()
         border.lineWidth = 0
         ann.border = border
@@ -588,42 +617,36 @@ final class WorkspaceViewModel {
 
     @discardableResult
     func addEditableTextOverlay(from selection: PDFSelection, on page: PDFPage) -> PDFAnnotation? {
-        let rawText = selection.string ?? ""
-        let text = rawText
-            .replacingOccurrences(of: "\n", with: " ")
-            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return nil }
-
-        var font = NSFont.systemFont(ofSize: 13)
-        var fontColor = NSColor.dsTextPrimaryNS
-        if let attributed = selection.attributedString, attributed.length > 0 {
-            if let extractedFont = attributed.attribute(.font, at: 0, effectiveRange: nil) as? NSFont {
-                font = extractedFont
-            }
-            if let extractedColor = attributed.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor {
-                fontColor = extractedColor
-            }
+        guard let plan = PDFEditingSupport.replacementPlan(
+            text: selection.string,
+            selectionBounds: selection.bounds(for: page),
+            attributedString: selection.attributedString,
+            pageBounds: page.bounds(for: .cropBox)
+        ) else {
+            showEditWarning(.emptySelection)
+            return nil
+        }
+        if let blockingWarning = plan.warnings.first(where: { warning in
+            warning == .invalidSelectionBounds || warning == .invalidAnnotationBounds
+        }) {
+            showEditWarning(blockingWarning)
+            return nil
+        }
+        plan.warnings.forEach(showEditWarning)
+        guard plan.shouldUseReplacementBackground else {
+            showEditWarning(.unsupportedReplacement)
+            return nil
         }
 
-        let selectionBounds = selection.bounds(for: page)
-        guard selectionBounds.width > 1, selectionBounds.height > 1 else { return nil }
-
-        let height = max(selectionBounds.height + 4, font.pointSize * 1.35)
-        let width = max(selectionBounds.width + 8, 36)
-        let bounds = CGRect(
-            x: selectionBounds.minX - 2,
-            y: selectionBounds.midY - height / 2,
-            width: width,
-            height: height
+        let ann = PDFAnnotation(bounds: plan.bounds, forType: .freeText, withProperties: nil)
+        ann.contents = plan.text
+        ann.font = plan.style.font
+        ann.fontColor = plan.style.textColor
+        ann.alignment = plan.style.alignment
+        ann.color = PDFEditingSupport.replacementBackgroundColor(
+            isReplacement: true,
+            originalBackground: plan.style.backgroundColor == .clear ? nil : plan.style.backgroundColor
         )
-
-        let ann = PDFAnnotation(bounds: bounds, forType: .freeText, withProperties: nil)
-        ann.contents = text
-        ann.font = font
-        ann.fontColor = fontColor
-        ann.alignment = .left
-        ann.color = NSColor.white.withAlphaComponent(0.96)
         ann.setValue(true, forAnnotationKey: Self.textReplacementAnnotationKey)
         let border = PDFBorder()
         border.lineWidth = 0
@@ -632,6 +655,14 @@ final class WorkspaceViewModel {
         undoManager?.registerUndo(withTarget: self) { _ in page.removeAnnotation(ann) }
         undoManager?.setActionName("Replace PDF Text")
         return ann
+    }
+
+    func showEditWarning(_ warning: PDFTextEditWarning) {
+        editingStatus = .warning(warning.message)
+    }
+
+    func showEditMessage(_ message: String, isError: Bool = false) {
+        editingStatus = isError ? .error(message) : .warning(message)
     }
 
     func addInkStroke(path: NSBezierPath, on page: PDFPage) {
@@ -648,7 +679,10 @@ final class WorkspaceViewModel {
     }
 
     func deleteSelectedAnnotation() {
-        guard let ann = selectedAnnotation, let page = ann.page else { return }
+        guard let ann = selectedAnnotation, let page = ann.page else {
+            showEditWarning(.annotationCreationFailed)
+            return
+        }
         page.removeAnnotation(ann)
         selectedAnnotation = nil
         undoManager?.registerUndo(withTarget: self) { vm in

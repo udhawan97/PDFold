@@ -8,9 +8,58 @@ struct ReadingCanvas: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PDFViewRepresentable(viewModel: viewModel)
+            ZStack(alignment: .top) {
+                PDFViewRepresentable(viewModel: viewModel)
+                if let status = viewModel.editingStatus {
+                    EditingStatusBanner(status: status) {
+                        viewModel.editingStatus = nil
+                    }
+                    .padding(.top, .dsMD)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .task(id: status.id) {
+                        guard !status.isError else { return }
+                        try? await Task.sleep(for: .seconds(4))
+                        guard !Task.isCancelled, viewModel.editingStatus?.id == status.id else { return }
+                        viewModel.editingStatus = nil
+                    }
+                }
+            }
             ZoomPageBar(viewModel: viewModel)
         }
+        .animation(.easeInOut(duration: 0.18), value: viewModel.editingStatus?.id)
+    }
+}
+
+private struct EditingStatusBanner: View {
+    var status: WorkspaceViewModel.EditingStatus
+    var dismiss: () -> Void
+
+    var body: some View {
+        HStack(spacing: .dsSM) {
+            Image(systemName: status.isError ? "exclamationmark.triangle.fill" : "info.circle.fill")
+                .foregroundStyle(status.isError ? Color.orange : Color.dsAccent)
+            Text(status.message)
+                .font(.dsCaption())
+                .foregroundStyle(Color.dsTextPrimary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+            Button(action: dismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .frame(width: 18, height: 18)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.dsTextTertiary)
+            .help("Dismiss")
+        }
+        .padding(.horizontal, .dsMD)
+        .padding(.vertical, .dsSM)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: .dsRadiusSm, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: .dsRadiusSm, style: .continuous)
+                .strokeBorder(Color.dsSeparator, lineWidth: 1)
+        }
+        .frame(maxWidth: 520)
     }
 }
 
@@ -249,7 +298,7 @@ struct PDFViewRepresentable: NSViewRepresentable {
                     let rect = pdfView.convert(ann.bounds, from: page)
                     showNoteEditor(for: ann, near: rect, in: pdfView)
                 } else {
-                    let ann = viewModel.addTextBox(at: pagePoint, on: page)
+                    guard let ann = viewModel.addTextBox(at: pagePoint, on: page) else { return }
                     let rect = pdfView.convert(ann.bounds, from: page)
                     showNoteEditor(for: ann, near: rect, in: pdfView)
                 }
@@ -296,7 +345,10 @@ struct PDFViewRepresentable: NSViewRepresentable {
         }
 
         private func showNoteEditor(for annotation: PDFAnnotation, near rect: CGRect, in view: NSView) {
-            let vc = NoteEditorViewController(annotation: annotation)
+            let vc = NoteEditorViewController(annotation: annotation) { [weak self, weak view] message, isError in
+                self?.viewModel.showEditMessage(message, isError: isError)
+                view?.needsDisplay = true
+            }
             let popover = NSPopover()
             popover.contentViewController = vc
             popover.behavior = .transient
@@ -395,11 +447,11 @@ final class PDFoldPDFView: PDFView {
 
 final class NoteEditorViewController: NSViewController {
     private let annotation: PDFAnnotation
+    private let statusHandler: (String, Bool) -> Void
     private weak var textView: NSTextView?
     private weak var scrollView: NSScrollView?
     private weak var sizeLabel: NSTextField?
-    private var originalAnnotationFont: NSFont?
-    private var originalAnnotationBackgroundColor: NSColor?
+    private let originalSnapshot: PDFAnnotationEditSnapshot
     private let minimumEditorFontSize: CGFloat = 10
     private var styleChanged = false
     private var editorFontFamily: String
@@ -407,16 +459,25 @@ final class NoteEditorViewController: NSViewController {
     private var editorFontTraits: NSFontTraitMask
     private var editorTextColor: NSColor
     private var editorAlignment: NSTextAlignment
+    private var didCommit = false
+    private var didCancel = false
     private var isFreeTextAnnotation: Bool { annotation.type == "FreeText" }
+    private var isDraftFreeTextAnnotation: Bool {
+        (annotation.value(forAnnotationKey: WorkspaceViewModel.draftTextAnnotationKey) as? Bool) == true
+    }
     private var isTextReplacementAnnotation: Bool {
         (annotation.value(forAnnotationKey: WorkspaceViewModel.textReplacementAnnotationKey) as? Bool) == true
     }
+    private var editorTitle: String {
+        if isTextReplacementAnnotation { return "Edit PDF Text" }
+        return isFreeTextAnnotation ? "Text Box" : "Edit Note"
+    }
 
-    init(annotation: PDFAnnotation) {
+    init(annotation: PDFAnnotation, statusHandler: @escaping (String, Bool) -> Void = { _, _ in }) {
         self.annotation = annotation
+        self.statusHandler = statusHandler
+        self.originalSnapshot = PDFAnnotationEditSnapshot(annotation: annotation)
         let resolvedFont = annotation.font ?? .systemFont(ofSize: 16)
-        self.originalAnnotationFont = annotation.font
-        self.originalAnnotationBackgroundColor = annotation.color
         self.editorFontFamily = resolvedFont.familyName ?? NSFont.systemFont(ofSize: 16).familyName ?? "System"
         self.editorFontSize = max(resolvedFont.pointSize, minimumEditorFontSize)
         self.editorFontTraits = NSFontManager.shared.traits(of: resolvedFont).intersection([.boldFontMask, .italicFontMask])
@@ -427,24 +488,24 @@ final class NoteEditorViewController: NSViewController {
     required init?(coder: NSCoder) { nil }
 
     override func loadView() {
-        let editorWidth = isFreeTextAnnotation ? max(420, min(560, annotation.bounds.width * 2.4)) : 300
-        let editorHeight: CGFloat = isFreeTextAnnotation ? 286 : 210
-        let headerHeight: CGFloat = 44
-        let footerHeight: CGFloat = 52
-        let controlsHeight: CGFloat = isFreeTextAnnotation ? 74 : 0
-        let textMargin: CGFloat = 14
+        let editorWidth = isFreeTextAnnotation ? max(460, min(640, annotation.bounds.width * 2.6)) : 340
+        let editorHeight: CGFloat = isFreeTextAnnotation ? 336 : 224
+        let headerHeight: CGFloat = 46
+        let footerHeight: CGFloat = 58
+        let controlsHeight: CGFloat = isFreeTextAnnotation ? 96 : 0
+        let textMargin: CGFloat = 16
         let textHeight = editorHeight - headerHeight - footerHeight - controlsHeight - textMargin
         let textWidth = editorWidth - (textMargin * 2)
         let container = NSView(frame: CGRect(x: 0, y: 0, width: editorWidth, height: editorHeight))
         container.wantsLayer = true
         container.layer?.backgroundColor = NSColor.dsSurfaceNS.cgColor
-        container.layer?.cornerRadius = 12
+        container.layer?.cornerRadius = 8
         container.layer?.cornerCurve = .continuous
 
-        let titleLabel = NSTextField(labelWithString: isFreeTextAnnotation ? "Edit PDF Text" : "Edit Note")
+        let titleLabel = NSTextField(labelWithString: editorTitle)
         titleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         titleLabel.textColor = .dsTextPrimaryNS
-        titleLabel.frame = CGRect(x: 16, y: editorHeight - 28, width: editorWidth - 32, height: 18)
+        titleLabel.frame = CGRect(x: 16, y: editorHeight - 30, width: editorWidth - 32, height: 18)
         container.addSubview(titleLabel)
 
         let scroll = NSScrollView(frame: CGRect(x: textMargin, y: footerHeight + controlsHeight, width: textWidth, height: textHeight))
@@ -452,10 +513,11 @@ final class NoteEditorViewController: NSViewController {
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true
         scroll.drawsBackground = true
-        scroll.backgroundColor = editorFieldBackgroundColor()
+        let fieldColors = PDFEditingSupport.editorFieldColors(for: editorTextColor)
+        scroll.backgroundColor = fieldColors.background
         scroll.wantsLayer = true
-        scroll.layer?.backgroundColor = editorFieldBackgroundColor().cgColor
-        scroll.layer?.cornerRadius = 8
+        scroll.layer?.backgroundColor = fieldColors.background.cgColor
+        scroll.layer?.cornerRadius = 6
         scroll.layer?.cornerCurve = .continuous
         scroll.layer?.borderWidth = 1
         scroll.layer?.borderColor = NSColor.dsSeparatorNS.withAlphaComponent(0.85).cgColor
@@ -465,8 +527,8 @@ final class NoteEditorViewController: NSViewController {
         tv.font = editorFont()
         tv.textContainerInset = NSSize(width: 10, height: 10)
         tv.string = annotation.contents ?? ""
-        tv.backgroundColor = editorFieldBackgroundColor()
-        tv.textColor = editorTextColor
+        tv.backgroundColor = fieldColors.background
+        tv.textColor = fieldColors.foreground
         tv.insertionPointColor = NSColor.dsAccentNS
         tv.alignment = editorAlignment
         tv.isEditable = true
@@ -496,6 +558,13 @@ final class NoteEditorViewController: NSViewController {
         done.contentTintColor = .dsAccentNS
         done.frame = CGRect(x: editorWidth - 88 - 12, y: 10, width: 88, height: 28)
         footer.addSubview(done)
+
+        let cancel = NSButton(title: "Cancel", target: self, action: #selector(cancel))
+        cancel.bezelStyle = .rounded
+        cancel.controlSize = .large
+        cancel.keyEquivalent = "\u{1b}"
+        cancel.frame = CGRect(x: editorWidth - 88 - 12 - 80, y: 10, width: 72, height: 28)
+        footer.addSubview(cancel)
         container.addSubview(footer)
 
         let sep = NSView(frame: CGRect(x: 12, y: footerHeight - 0.5, width: editorWidth - 24, height: 0.5))
@@ -515,50 +584,89 @@ final class NoteEditorViewController: NSViewController {
 
     override func viewWillDisappear() {
         super.viewWillDisappear()
-        commitChanges()
+        if !didCommit && !didCancel {
+            cancelChanges()
+        }
     }
 
     @objc private func commit() {
-        commitChanges()
+        guard commitChanges() else { return }
+        didCommit = true
         dismiss(nil)
     }
 
-    private func commitChanges() {
-        guard let textView else { return }
+    @objc private func cancel() {
+        cancelChanges()
+        dismiss(nil)
+    }
+
+    private func commitChanges() -> Bool {
+        guard let textView else { return false }
+        switch PDFEditingSupport.emptyEditAction(
+            text: textView.string,
+            isDraft: isDraftFreeTextAnnotation,
+            isReplacement: isTextReplacementAnnotation
+        ) {
+        case .removeDraft:
+            annotation.page?.removeAnnotation(annotation)
+            return true
+        case .rejectReplacement:
+            statusHandler("Replacement text cannot be empty. Use a text box or a future redaction tool for removal.", true)
+            return false
+        case .allow:
+            break
+        }
         annotation.contents = textView.string
         if isFreeTextAnnotation {
             annotation.font = documentFont()
             annotation.fontColor = editorTextColor
             annotation.alignment = editorAlignment
-            annotation.color = replacementBackgroundColor()
-            resizeFreeTextAnnotationToFit(textView.string, preserveReplacementWidth: isTextReplacementAnnotation)
+            annotation.color = PDFEditingSupport.replacementBackgroundColor(
+                isReplacement: isTextReplacementAnnotation,
+                originalBackground: originalSnapshot.color
+            )
+            guard resizeFreeTextAnnotationToFit(textView.string, preserveReplacementWidth: isTextReplacementAnnotation) else {
+                originalSnapshot.restore(to: annotation)
+                statusHandler(PDFTextEditWarning.invalidAnnotationBounds.message, true)
+                return false
+            }
+        }
+        if let document = annotation.page?.document, document.dataRepresentation() == nil {
+            originalSnapshot.restore(to: annotation)
+            statusHandler(PDFTextEditWarning.serializationFailed.message, true)
+            return false
+        }
+        return true
+    }
+
+    private func cancelChanges() {
+        didCancel = true
+        if isDraftFreeTextAnnotation, (originalSnapshot.contents ?? "").isEmpty {
+            annotation.page?.removeAnnotation(annotation)
+        } else {
+            originalSnapshot.restore(to: annotation)
         }
     }
 
-    private func resizeFreeTextAnnotationToFit(_ text: String, preserveReplacementWidth: Bool) {
-        guard isFreeTextAnnotation else { return }
+    private func resizeFreeTextAnnotationToFit(_ text: String, preserveReplacementWidth: Bool) -> Bool {
+        guard isFreeTextAnnotation else { return true }
         let font = annotation.font ?? NSFont.systemFont(ofSize: minimumEditorFontSize)
-        let measured = (text.isEmpty ? " " : text) as NSString
-        let attributes: [NSAttributedString.Key: Any] = [.font: font]
-        let currentBounds = annotation.bounds
-        let measurementWidth = preserveReplacementWidth ? max(currentBounds.width - 10, 1) : 520
-        let size = measured.boundingRect(
-            with: CGSize(width: measurementWidth, height: CGFloat.infinity),
-            options: [.usesLineFragmentOrigin, .usesFontLeading],
-            attributes: attributes
-        ).size
-        var bounds = currentBounds
-        if !preserveReplacementWidth {
-            bounds.size.width = max(36, min(620, ceil(size.width) + 12))
+        guard let bounds = PDFEditingSupport.resizedFreeTextBounds(
+            currentBounds: annotation.bounds,
+            text: text,
+            font: font,
+            preserveWidth: preserveReplacementWidth
+        ) else {
+            return false
         }
-        bounds.size.height = max(font.pointSize * 1.45, ceil(size.height) + 8)
         annotation.bounds = bounds
+        return true
     }
 
     private func formattingControls(frame: CGRect) -> NSView {
         let controls = NSView(frame: frame)
 
-        let family = NSPopUpButton(frame: CGRect(x: 0, y: 40, width: 172, height: 26), pullsDown: false)
+        let family = NSPopUpButton(frame: CGRect(x: 4, y: 58, width: 184, height: 28), pullsDown: false)
         let families = ["Helvetica", "Times", "Courier", "Avenir", "Menlo"]
         family.addItems(withTitles: families)
         if let match = families.first(where: { editorFontFamily.localizedCaseInsensitiveContains($0) || $0.localizedCaseInsensitiveContains(editorFontFamily) }) {
@@ -569,52 +677,53 @@ final class NoteEditorViewController: NSViewController {
         }
         family.target = self
         family.action = #selector(changeFontFamily(_:))
-        family.toolTip = "Font"
+        family.toolTip = "Font family"
         controls.addSubview(family)
 
-        let align = NSSegmentedControl(labels: ["L", "C", "R"], trackingMode: .selectOne, target: self, action: #selector(changeAlignment(_:)))
-        align.frame = CGRect(x: 184, y: 40, width: 92, height: 26)
-        align.toolTip = "Text alignment"
-        align.selectedSegment = selectedAlignmentSegment()
-        controls.addSubview(align)
-
-        let bold = formattingButton(title: "B", x: 0, action: #selector(toggleBold), isToggle: true)
-        bold.font = .boldSystemFont(ofSize: 13)
-        bold.state = editorFontTraits.contains(.boldFontMask) ? .on : .off
-        bold.toolTip = "Bold"
-        controls.addSubview(bold)
-
-        let italic = formattingButton(title: "I", x: 34, action: #selector(toggleItalic), isToggle: true)
-        italic.font = NSFontManager.shared.convert(NSFont.systemFont(ofSize: 13), toHaveTrait: .italicFontMask)
-        italic.state = editorFontTraits.contains(.italicFontMask) ? .on : .off
-        italic.toolTip = "Italic"
-        controls.addSubview(italic)
-
-        let sizeDown = formattingButton(title: "A-", x: 76, action: #selector(decreaseFontSize))
-        sizeDown.toolTip = "Decrease font size"
-        controls.addSubview(sizeDown)
+        let sizeStepper = NSStepper(frame: CGRect(x: 252, y: 58, width: 18, height: 28))
+        sizeStepper.minValue = 8
+        sizeStepper.maxValue = 72
+        sizeStepper.integerValue = Int(round(editorFontSize))
+        sizeStepper.target = self
+        sizeStepper.action = #selector(changeFontSize(_:))
+        sizeStepper.toolTip = "Font size"
+        controls.addSubview(sizeStepper)
 
         let label = NSTextField(labelWithString: "\(Int(round(editorFontSize)))")
         label.alignment = .center
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = .secondaryLabelColor
-        label.frame = CGRect(x: 112, y: 8, width: 34, height: 18)
+        label.frame = CGRect(x: 198, y: 63, width: 44, height: 18)
         controls.addSubview(label)
         sizeLabel = label
 
-        let sizeUp = formattingButton(title: "A+", x: 148, action: #selector(increaseFontSize))
-        sizeUp.toolTip = "Increase font size"
-        controls.addSubview(sizeUp)
+        let bold = formattingButton(title: "B", x: 4, y: 18, action: #selector(toggleBold), isToggle: true)
+        bold.font = .boldSystemFont(ofSize: 13)
+        bold.state = editorFontTraits.contains(.boldFontMask) ? .on : .off
+        bold.toolTip = "Bold"
+        controls.addSubview(bold)
+
+        let italic = formattingButton(title: "I", x: 42, y: 18, action: #selector(toggleItalic), isToggle: true)
+        italic.font = NSFontManager.shared.convert(NSFont.systemFont(ofSize: 13), toHaveTrait: .italicFontMask)
+        italic.state = editorFontTraits.contains(.italicFontMask) ? .on : .off
+        italic.toolTip = "Italic"
+        controls.addSubview(italic)
+
+        let align = NSSegmentedControl(labels: ["L", "C", "R"], trackingMode: .selectOne, target: self, action: #selector(changeAlignment(_:)))
+        align.frame = CGRect(x: 88, y: 18, width: 96, height: 28)
+        align.toolTip = "Text alignment"
+        align.selectedSegment = selectedAlignmentSegment()
+        controls.addSubview(align)
 
         let swatches: [(NSColor, CGFloat, String, Int)] = [
-            (.black, 204, "Black", 0),
-            (.dsTextPrimaryNS, 232, "Blue", 1),
-            (.systemRed, 260, "Red", 2),
-            (.white, 288, "White", 3)
+            (.labelColor, 204, "Default", 0),
+            (.dsTextPrimaryNS, 234, "PDFold blue", 1),
+            (.systemRed, 264, "Red", 2),
+            (.white, 294, "White", 3)
         ]
         for (color, x, name, tag) in swatches {
             let button = NSButton(title: "", target: self, action: #selector(changeTextColor(_:)))
-            button.frame = CGRect(x: x, y: 8, width: 20, height: 20)
+            button.frame = CGRect(x: x, y: 21, width: 20, height: 20)
             button.bezelStyle = .shadowlessSquare
             button.setButtonType(.momentaryChange)
             button.isBordered = false
@@ -633,9 +742,9 @@ final class NoteEditorViewController: NSViewController {
         return controls
     }
 
-    private func formattingButton(title: String, x: CGFloat, action: Selector, isToggle: Bool = false) -> NSButton {
+    private func formattingButton(title: String, x: CGFloat, y: CGFloat, action: Selector, isToggle: Bool = false) -> NSButton {
         let button = NSButton(title: title, target: self, action: action)
-        button.frame = CGRect(x: x, y: 5, width: 30, height: 26)
+        button.frame = CGRect(x: x, y: y, width: 30, height: 28)
         button.bezelStyle = .rounded
         button.setButtonType(isToggle ? .toggle : .momentaryPushIn)
         button.controlSize = .small
@@ -650,13 +759,8 @@ final class NoteEditorViewController: NSViewController {
         toggleTrait(.italicFontMask, enabled: sender.state == .on)
     }
 
-    @objc private func decreaseFontSize() {
-        editorFontSize = max(8, editorFontSize - 1)
-        applyFormatting()
-    }
-
-    @objc private func increaseFontSize() {
-        editorFontSize = min(72, editorFontSize + 1)
+    @objc private func changeFontSize(_ sender: NSStepper) {
+        editorFontSize = CGFloat(sender.integerValue)
         applyFormatting()
     }
 
@@ -665,7 +769,7 @@ final class NoteEditorViewController: NSViewController {
         case 1: editorTextColor = .dsTextPrimaryNS
         case 2: editorTextColor = .systemRed
         case 3: editorTextColor = .white
-        default: editorTextColor = .black
+        default: editorTextColor = .labelColor
         }
         applyFormatting()
     }
@@ -696,12 +800,13 @@ final class NoteEditorViewController: NSViewController {
     private func applyFormatting() {
         styleChanged = true
         sizeLabel?.stringValue = "\(Int(round(editorFontSize)))"
+        let fieldColors = PDFEditingSupport.editorFieldColors(for: editorTextColor)
         textView?.font = editorFont()
-        textView?.textColor = editorTextColor
+        textView?.textColor = fieldColors.foreground
         textView?.alignment = editorAlignment
-        textView?.backgroundColor = editorFieldBackgroundColor()
-        scrollView?.backgroundColor = editorFieldBackgroundColor()
-        scrollView?.layer?.backgroundColor = editorFieldBackgroundColor().cgColor
+        textView?.backgroundColor = fieldColors.background
+        scrollView?.backgroundColor = fieldColors.background
+        scrollView?.layer?.backgroundColor = fieldColors.background.cgColor
     }
 
     private func editorFont() -> NSFont {
@@ -712,7 +817,7 @@ final class NoteEditorViewController: NSViewController {
 
     private func documentFont() -> NSFont {
         guard styleChanged else {
-            return originalAnnotationFont ?? annotation.font ?? editorFont()
+            return originalSnapshot.font ?? annotation.font ?? editorFont()
         }
         let base = NSFont(name: editorFontFamily, size: editorFontSize) ?? editorFont()
         return applyTraits(to: base)
@@ -741,24 +846,6 @@ final class NoteEditorViewController: NSViewController {
         }
     }
 
-    private func replacementBackgroundColor() -> NSColor {
-        guard isTextReplacementAnnotation else {
-            return originalAnnotationBackgroundColor ?? .clear
-        }
-        return originalAnnotationBackgroundColor ?? NSColor.white.withAlphaComponent(0.96)
-    }
-
-    private func editorFieldBackgroundColor() -> NSColor {
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        let color = editorTextColor.usingColorSpace(.sRGB) ?? editorTextColor
-        color.getRed(&red, green: &green, blue: &blue, alpha: nil)
-        let relativeLuminance = (0.2126 * red) + (0.7152 * green) + (0.0722 * blue)
-        return relativeLuminance > 0.72
-            ? NSColor(srgbRed: 0.071, green: 0.082, blue: 0.098, alpha: 1)
-            : .textBackgroundColor
-    }
 }
 
 // MARK: - Ink drawing overlay

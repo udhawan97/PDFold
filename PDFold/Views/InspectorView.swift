@@ -305,7 +305,7 @@ private struct InspectorMarkupView: View {
     }
 
     var body: some View {
-        if allAnnotations.isEmpty {
+        if allAnnotations.isEmpty && viewModel.selectedAnnotation == nil {
             VStack(spacing: .dsSM) {
                 Image(systemName: "highlighter")
                     .font(.system(size: 24, weight: .light))
@@ -322,6 +322,10 @@ private struct InspectorMarkupView: View {
             .frame(maxWidth: .infinity)
         } else {
             LazyVStack(alignment: .leading, spacing: 0) {
+                if let selected = viewModel.selectedAnnotation {
+                    InspectorEditingDetails(ann: selected)
+                    Rectangle().fill(Color.dsSeparator).frame(height: 0.5)
+                }
                 ForEach(allAnnotations.indices, id: \.self) { i in
                     InspectorAnnotationRow(ann: allAnnotations[i].annotation,
                                           memberName: allAnnotations[i].memberName)
@@ -329,6 +333,55 @@ private struct InspectorMarkupView: View {
                 }
             }
             .padding(.vertical, .dsXS)
+        }
+    }
+}
+
+private struct InspectorEditingDetails: View {
+    var ann: PDFAnnotation
+
+    private var isEditableText: Bool { ann.type == "FreeText" || ann.type == "Text" }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: .dsSM) {
+            HStack(spacing: .dsSM) {
+                Image(systemName: "slider.horizontal.3")
+                    .foregroundStyle(Color.dsAccent)
+                Text("Editing")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.dsTextPrimary)
+                Spacer()
+            }
+
+            InspectorDetailLine(label: "Type", value: ann.type ?? "Annotation")
+            InspectorDetailLine(label: "Bounds", value: "\(Int(ann.bounds.width)) x \(Int(ann.bounds.height))")
+            if let font = ann.font {
+                InspectorDetailLine(label: "Font", value: "\(font.displayName ?? font.familyName ?? "Font") \(Int(round(font.pointSize)))")
+            }
+            InspectorDetailLine(label: "Mode", value: isEditableText ? "Editable annotation" : "Markup annotation")
+        }
+        .padding(.horizontal, .dsMD)
+        .padding(.vertical, .dsMD)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.dsAccentSoft.opacity(0.35))
+    }
+}
+
+private struct InspectorDetailLine: View {
+    var label: String
+    var value: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(label.uppercased())
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(Color.dsTextTertiary)
+                .frame(width: 54, alignment: .leading)
+            Text(value)
+                .font(.dsCaption())
+                .foregroundStyle(Color.dsTextSecondary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

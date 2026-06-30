@@ -11,6 +11,7 @@
 		156D6EBE77E5EEE483A69866 /* PDFKitEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAC778D374332BD668C7F87 /* PDFKitEngine.swift */; };
 		21659EE9F3589A5587F30A8F /* PDFProcessingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07E5D3EE703AA0F550391D68 /* PDFProcessingEngine.swift */; };
 		23FC0C344110D094998B9C83 /* InspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 532E4CABAC0F8B4664C810DE /* InspectorView.swift */; };
+		2A4C8D8E0E5C4FD98F3E7C2B /* PDFEditingSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B9F2D8C4E7A4B4CB4C9A231 /* PDFEditingSupport.swift */; };
 		3740966A95E081C76D12CC9B /* AppToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48261BB994A895CFA9A07CE0 /* AppToolbar.swift */; };
 		376ED70FB3F09DF6B3F65E70 /* BoundaryPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062B11437A890C3344D88298 /* BoundaryPage.swift */; };
 		3866888BE258CB21880A59E9 /* ReadingCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52DE2C15407429070EAC6A29 /* ReadingCanvas.swift */; };
@@ -66,6 +67,7 @@
 		532E4CABAC0F8B4664C810DE /* InspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorView.swift; sourceTree = "<group>"; };
 		547E4E8F72DEE08FB7A66472 /* PDFEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFEngine.swift; sourceTree = "<group>"; };
 		60A8C841F2BC6480B83C84F1 /* PDFoldTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PDFoldTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6B9F2D8C4E7A4B4CB4C9A231 /* PDFEditingSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFEditingSupport.swift; sourceTree = "<group>"; };
 		7E5FBDD597A2A46452637450 /* PDFold.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PDFold.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		86F4A0911CD68D8A0B97F04D /* PDFiumProcessingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFiumProcessingEngine.swift; sourceTree = "<group>"; };
 		92C4739CB79025BE3763E623 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
@@ -196,6 +198,7 @@
 			isa = PBXGroup;
 			children = (
 				062B11437A890C3344D88298 /* BoundaryPage.swift */,
+				6B9F2D8C4E7A4B4CB4C9A231 /* PDFEditingSupport.swift */,
 				547E4E8F72DEE08FB7A66472 /* PDFEngine.swift */,
 				86F4A0911CD68D8A0B97F04D /* PDFiumProcessingEngine.swift */,
 				9CAC778D374332BD668C7F87 /* PDFKitEngine.swift */,
@@ -361,6 +364,7 @@
 				B083EBE61135CF3C90CE7D3D /* GuidePopover.swift in Sources */,
 				23FC0C344110D094998B9C83 /* InspectorView.swift in Sources */,
 				8118B9E40222205B59BFEA95 /* MemberDocument.swift in Sources */,
+				2A4C8D8E0E5C4FD98F3E7C2B /* PDFEditingSupport.swift in Sources */,
 				7D86C0C61FC456E2CF865899 /* PDFEngine.swift in Sources */,
 				156D6EBE77E5EEE483A69866 /* PDFKitEngine.swift in Sources */,
 				5867B323DC0FF0CDFF2B9A17 /* PDFKitProcessingEngineFallback.swift in Sources */,

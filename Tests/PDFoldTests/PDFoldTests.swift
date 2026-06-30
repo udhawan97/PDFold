@@ -345,6 +345,148 @@ final class WorkspaceViewModelTests: XCTestCase {
         )
         XCTAssertLessThan(annotation.bounds.width, 180)
     }
+
+    func testEditableTextOverlayPreservesSelectionStyleAndUsesSafeBackground() throws {
+        let pdf = makePDF(pageTexts: ["Replaceable text"])
+        let page = try XCTUnwrap(pdf.page(at: 0))
+        let selection = try XCTUnwrap(page.selectionForWord(at: CGPoint(x: 75, y: 720)))
+        let viewModel = WorkspaceViewModel(
+            document: WorkspaceDocument(),
+            processingEngine: PDFKitProcessingEngineFallback()
+        )
+
+        let annotation = try XCTUnwrap(viewModel.addEditableTextOverlay(from: selection, on: page))
+
+        XCTAssertEqual(annotation.contents, "Replaceable")
+        XCTAssertGreaterThanOrEqual(annotation.font?.pointSize ?? 0, 8)
+        XCTAssertNotNil(annotation.fontColor)
+        XCTAssertGreaterThan(annotation.bounds.width, selection.bounds(for: page).width)
+        XCTAssertGreaterThan(annotation.bounds.height, 0)
+        XCTAssertNotEqual(annotation.color, .clear)
+        XCTAssertNil(viewModel.editingStatus)
+    }
+
+    func testEditableTextOverlayRejectsInvalidSelectionGracefully() throws {
+        let plan = PDFEditingSupport.replacementPlan(
+            text: "Text",
+            selectionBounds: CGRect(x: 10, y: 10, width: 0, height: 12),
+            attributedString: nil
+        )
+
+        XCTAssertEqual(plan?.warnings, [.invalidSelectionBounds])
+        XCTAssertFalse(plan?.shouldUseReplacementBackground ?? true)
+    }
+
+    func testReplacementPlanClampsExpandedBoundsInsidePage() throws {
+        let pageBounds = CGRect(x: 0, y: 0, width: 200, height: 100)
+
+        let plan = try XCTUnwrap(PDFEditingSupport.replacementPlan(
+            text: "Edge",
+            selectionBounds: CGRect(x: 196, y: 40, width: 4, height: 12),
+            attributedString: nil,
+            pageBounds: pageBounds
+        ))
+
+        XCTAssertTrue(pageBounds.contains(plan.bounds))
+        XCTAssertLessThanOrEqual(plan.bounds.maxX, pageBounds.maxX)
+    }
+
+    func testEditorFieldUsesDarkBackgroundForWhiteText() throws {
+        let colors = PDFEditingSupport.editorFieldColors(for: .white)
+        let background = try XCTUnwrap(colors.background.usingColorSpace(.sRGB))
+        var red: CGFloat = 1
+        var green: CGFloat = 1
+        var blue: CGFloat = 1
+        background.getRed(&red, green: &green, blue: &blue, alpha: nil)
+
+        XCTAssertLessThan((red + green + blue) / 3, 0.25)
+    }
+
+    func testTextBoxBoundsStayInsidePage() throws {
+        let pageBounds = CGRect(x: 0, y: 0, width: 200, height: 200)
+
+        let bounds = PDFEditingSupport.textBoxBounds(
+            centeredAt: CGPoint(x: 196, y: 196),
+            pageBounds: pageBounds
+        )
+
+        XCTAssertGreaterThanOrEqual(bounds.minX, pageBounds.minX)
+        XCTAssertLessThanOrEqual(bounds.maxX, pageBounds.maxX)
+        XCTAssertGreaterThanOrEqual(bounds.minY, pageBounds.minY)
+        XCTAssertLessThanOrEqual(bounds.maxY, pageBounds.maxY)
+    }
+
+    func testFreeTextResizePreservesReplacementWidth() {
+        let original = CGRect(x: 20, y: 30, width: 96, height: 18)
+
+        let resized = PDFEditingSupport.resizedFreeTextBounds(
+            currentBounds: original,
+            text: "A much longer replacement string",
+            font: .systemFont(ofSize: 12),
+            preserveWidth: true
+        )
+
+        XCTAssertEqual(resized?.width, original.width)
+        XCTAssertGreaterThan(resized?.height ?? 0, original.height)
+    }
+
+    func testEmptyEditActionMatchesDraftReplacementAndExistingTextSemantics() {
+        XCTAssertEqual(
+            PDFEditingSupport.emptyEditAction(text: "   ", isDraft: true, isReplacement: false),
+            .removeDraft
+        )
+        XCTAssertEqual(
+            PDFEditingSupport.emptyEditAction(text: "\n", isDraft: false, isReplacement: true),
+            .rejectReplacement
+        )
+        XCTAssertEqual(
+            PDFEditingSupport.emptyEditAction(text: "", isDraft: false, isReplacement: false),
+            .allow
+        )
+        XCTAssertEqual(
+            PDFEditingSupport.emptyEditAction(text: "Keep", isDraft: true, isReplacement: true),
+            .allow
+        )
+    }
+
+    func testAnnotationSnapshotRestoresCancelState() {
+        let annotation = PDFAnnotation(bounds: CGRect(x: 10, y: 20, width: 80, height: 24), forType: .freeText, withProperties: nil)
+        annotation.contents = "Original"
+        annotation.font = .systemFont(ofSize: 14)
+        annotation.fontColor = .black
+        annotation.color = .clear
+        annotation.alignment = .right
+        let snapshot = PDFAnnotationEditSnapshot(annotation: annotation)
+
+        annotation.contents = "Changed"
+        annotation.font = .boldSystemFont(ofSize: 22)
+        annotation.fontColor = .systemRed
+        annotation.color = .white
+        annotation.alignment = .center
+        annotation.bounds = CGRect(x: 1, y: 2, width: 3, height: 4)
+        snapshot.restore(to: annotation)
+
+        XCTAssertEqual(annotation.contents, "Original")
+        XCTAssertEqual(annotation.font?.pointSize, 14)
+        XCTAssertTrue(colorsApproximatelyEqual(annotation.fontColor, NSColor.black))
+        XCTAssertTrue(colorsApproximatelyEqual(annotation.color, NSColor.clear))
+        XCTAssertEqual(annotation.alignment, .right)
+        XCTAssertEqual(annotation.bounds, CGRect(x: 10, y: 20, width: 80, height: 24))
+    }
+
+    func testAddTextBoxRejectsMalformedPagePoint() throws {
+        let pdf = makePDF(pageTexts: ["Text"])
+        let page = try XCTUnwrap(pdf.page(at: 0))
+        let viewModel = WorkspaceViewModel(
+            document: WorkspaceDocument(),
+            processingEngine: PDFKitProcessingEngineFallback()
+        )
+
+        let annotation = viewModel.addTextBox(at: CGPoint(x: CGFloat.infinity, y: 20), on: page)
+
+        XCTAssertNil(annotation)
+        XCTAssertEqual(viewModel.editingStatus?.message, PDFTextEditWarning.invalidAnnotationBounds.message)
+    }
 }
 
 private func makeMemberPDF(name: String, pageTexts: [String]) -> (MemberDocument, PDFDocument) {
@@ -379,6 +521,27 @@ private func makePDF(pageTexts: [String]) -> PDFDocument {
         document.insert(page, at: index)
     }
     return document
+}
+
+private func colorsApproximatelyEqual(_ lhs: NSColor?, _ rhs: NSColor, tolerance: CGFloat = 0.001) -> Bool {
+    guard let left = lhs?.usingColorSpace(.sRGB),
+          let right = rhs.usingColorSpace(.sRGB) else {
+        return false
+    }
+    var leftRed: CGFloat = 0
+    var leftGreen: CGFloat = 0
+    var leftBlue: CGFloat = 0
+    var leftAlpha: CGFloat = 0
+    var rightRed: CGFloat = 0
+    var rightGreen: CGFloat = 0
+    var rightBlue: CGFloat = 0
+    var rightAlpha: CGFloat = 0
+    left.getRed(&leftRed, green: &leftGreen, blue: &leftBlue, alpha: &leftAlpha)
+    right.getRed(&rightRed, green: &rightGreen, blue: &rightBlue, alpha: &rightAlpha)
+    return abs(leftRed - rightRed) <= tolerance &&
+        abs(leftGreen - rightGreen) <= tolerance &&
+        abs(leftBlue - rightBlue) <= tolerance &&
+        abs(leftAlpha - rightAlpha) <= tolerance
 }
 
 private final class TextFixturePageView: NSView {
