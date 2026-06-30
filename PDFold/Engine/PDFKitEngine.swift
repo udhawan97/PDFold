@@ -39,9 +39,13 @@ final class PDFKitEngine: PDFEngine {
                 if let page = pdf.page(at: i) {
                     // Export: copy so the live combinedPDF retains sole ownership of the page.
                     // Display: share the live page so annotations persist across rebuilds.
-                    let insertPage = includeBanners ? page : (page.copy() as! PDFPage)
-                    combined.insert(insertPage, at: insertIndex)
-                    insertIndex += 1
+                    if includeBanners {
+                        combined.insert(page, at: insertIndex)
+                        insertIndex += 1
+                    } else if let copiedPage = page.copy() as? PDFPage {
+                        combined.insert(copiedPage, at: insertIndex)
+                        insertIndex += 1
+                    }
                 }
             }
         }

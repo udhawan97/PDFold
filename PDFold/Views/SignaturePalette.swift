@@ -244,8 +244,15 @@ final class SignatureStore {
     }
 
     func all() -> [Data] {
-        (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil))
-            .map { $0.compactMap { try? Data(contentsOf: $0) } } ?? []
+        let urls = (try? FileManager.default.contentsOfDirectory(
+            at: dir,
+            includingPropertiesForKeys: [.creationDateKey]
+        ))?.sorted { a, b in
+            let aDate = (try? a.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
+            let bDate = (try? b.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
+            return aDate < bDate
+        } ?? []
+        return urls.compactMap { try? Data(contentsOf: $0) }
     }
 
     func save(_ data: Data) {

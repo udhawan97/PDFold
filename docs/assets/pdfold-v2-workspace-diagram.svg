@@ -1,135 +1,154 @@
-<svg width="1280" height="680" viewBox="0 0 1280 680" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">PDFold Product Flow</title>
-  <desc id="desc">A clean product flow diagram showing PDFold importing source files, assembling a local workspace, and saving or exporting artifacts.</desc>
+  <desc id="desc">Dark-mode product flow diagram showing source files, the PDFold local workspace, and exported artifacts.</desc>
   <defs>
-    <filter id="softShadow" x="-8%" y="-8%" width="116%" height="116%">
-      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0F172A" flood-opacity="0.08"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#070B14"/>
+      <stop offset="0.58" stop-color="#0B1220"/>
+      <stop offset="1" stop-color="#071713"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#121B2B"/>
+      <stop offset="1" stop-color="#0B1220"/>
+    </linearGradient>
+    <linearGradient id="workspace" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0D2A2A"/>
+      <stop offset="1" stop-color="#0B1220"/>
+    </linearGradient>
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M 56 0 L 0 0 0 56" stroke="#1F3147" stroke-width="1" opacity="0.22"/>
+    </pattern>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000000" flood-opacity="0.38"/>
     </filter>
     <style>
-      .title { font: 750 30px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0F172A; }
-      .subtitle { font: 500 15px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #475569; }
-      .step { font: 750 18px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0F172A; }
-      .body { font: 500 13px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #475569; }
-      .small { font: 600 12px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #64748B; }
-      .chip { font: 700 12px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-      .tag { font: 700 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: 1.4px; }
-      .card { fill: #FFFFFF; stroke: #E2E8F0; stroke-width: 1.25; }
-      .arrow { stroke: #0F766E; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .title { font: 800 32px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #F8FAFC; }
+      .subtitle { font: 550 15px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #B6C3D4; }
+      .step { font: 800 21px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #F8FAFC; }
+      .body { font: 550 14px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #A8B6C8; }
+      .caption { font: 650 12px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #9AA8BA; }
+      .chip { font: 800 12px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .tag { font: 800 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: 1.6px; }
+      .card { fill: url(#panel); stroke: #263A55; stroke-width: 1.25; }
+      .workspaceCard { fill: url(#workspace); stroke: #2DD4BF; stroke-width: 1.35; }
+      .arrow { stroke: #2DD4BF; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
     </style>
   </defs>
 
-  <rect width="1280" height="680" rx="24" fill="#F8FAFC"/>
-  <rect x="32" y="32" width="1216" height="616" rx="22" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <rect width="1280" height="720" rx="28" fill="#020617"/>
+  <rect x="32" y="32" width="1216" height="656" rx="26" fill="url(#bg)"/>
+  <rect x="32" y="32" width="1216" height="656" rx="26" fill="url(#grid)"/>
+  <rect x="32" y="32" width="1216" height="656" rx="26" stroke="#1F3147"/>
 
   <text x="640" y="82" text-anchor="middle" class="title">PDFold Product Flow</text>
   <text x="640" y="112" text-anchor="middle" class="subtitle">Import files, assemble a local workspace, and export clean artifacts.</text>
 
-  <g filter="url(#softShadow)">
-    <rect x="88" y="172" width="318" height="326" rx="18" class="card"/>
-    <rect x="88" y="172" width="318" height="5" rx="2.5" fill="#2563EB"/>
-    <text x="120" y="218" class="tag" fill="#2563EB">01 IMPORT</text>
-    <text x="120" y="252" class="step">Import source files</text>
-    <text x="120" y="284" class="body">Bring in user-selected PDFs, Office</text>
-    <text x="120" y="305" class="body">documents, HTML files, text, data,</text>
-    <text x="120" y="326" class="body">and images.</text>
+  <g transform="translate(86 170)" filter="url(#shadow)">
+    <rect width="318" height="340" rx="20" class="card"/>
+    <rect width="318" height="5" rx="2.5" fill="#38BDF8"/>
+    <text x="32" y="50" class="tag" fill="#67E8F9">01 IMPORT</text>
+    <text x="32" y="86" class="step">Source files</text>
+    <text x="32" y="124" class="body">Bring in user-selected PDFs,</text>
+    <text x="32" y="146" class="body">Office documents, HTML files,</text>
+    <text x="32" y="168" class="body">text, data, and images.</text>
 
-    <g transform="translate(120 370)">
-      <rect x="0" y="0" width="62" height="30" rx="15" fill="#DBEAFE"/>
-      <text x="31" y="20" text-anchor="middle" class="chip" fill="#1D4ED8">PDF</text>
-      <rect x="72" y="0" width="70" height="30" rx="15" fill="#DBEAFE"/>
-      <text x="107" y="20" text-anchor="middle" class="chip" fill="#1D4ED8">DOCX</text>
-      <rect x="152" y="0" width="70" height="30" rx="15" fill="#DBEAFE"/>
-      <text x="187" y="20" text-anchor="middle" class="chip" fill="#1D4ED8">HTML</text>
-      <rect x="232" y="0" width="54" height="30" rx="15" fill="#DBEAFE"/>
-      <text x="259" y="20" text-anchor="middle" class="chip" fill="#1D4ED8">MD</text>
+    <g transform="translate(32 214)">
+      <rect x="0" y="0" width="62" height="30" rx="15" fill="#082F49" stroke="#38BDF8"/>
+      <text x="31" y="20" text-anchor="middle" class="chip" fill="#BAE6FD">PDF</text>
+      <rect x="74" y="0" width="70" height="30" rx="15" fill="#082F49" stroke="#38BDF8"/>
+      <text x="109" y="20" text-anchor="middle" class="chip" fill="#BAE6FD">DOCX</text>
+      <rect x="156" y="0" width="70" height="30" rx="15" fill="#082F49" stroke="#38BDF8"/>
+      <text x="191" y="20" text-anchor="middle" class="chip" fill="#BAE6FD">HTML</text>
+      <rect x="238" y="0" width="48" height="30" rx="15" fill="#082F49" stroke="#38BDF8"/>
+      <text x="262" y="20" text-anchor="middle" class="chip" fill="#BAE6FD">MD</text>
 
-      <rect x="0" y="42" width="58" height="30" rx="15" fill="#DBEAFE"/>
-      <text x="29" y="62" text-anchor="middle" class="chip" fill="#1D4ED8">TXT</text>
-      <rect x="68" y="42" width="58" height="30" rx="15" fill="#DBEAFE"/>
-      <text x="97" y="62" text-anchor="middle" class="chip" fill="#1D4ED8">CSV</text>
-      <rect x="136" y="42" width="62" height="30" rx="15" fill="#DBEAFE"/>
-      <text x="167" y="62" text-anchor="middle" class="chip" fill="#1D4ED8">JSON</text>
-      <rect x="208" y="42" width="78" height="30" rx="15" fill="#DBEAFE"/>
-      <text x="247" y="62" text-anchor="middle" class="chip" fill="#1D4ED8">Images</text>
+      <rect x="0" y="44" width="58" height="30" rx="15" fill="#082F49" stroke="#38BDF8"/>
+      <text x="29" y="64" text-anchor="middle" class="chip" fill="#BAE6FD">TXT</text>
+      <rect x="70" y="44" width="58" height="30" rx="15" fill="#082F49" stroke="#38BDF8"/>
+      <text x="99" y="64" text-anchor="middle" class="chip" fill="#BAE6FD">CSV</text>
+      <rect x="140" y="44" width="62" height="30" rx="15" fill="#082F49" stroke="#38BDF8"/>
+      <text x="171" y="64" text-anchor="middle" class="chip" fill="#BAE6FD">JSON</text>
+      <rect x="214" y="44" width="72" height="30" rx="15" fill="#082F49" stroke="#38BDF8"/>
+      <text x="250" y="64" text-anchor="middle" class="chip" fill="#BAE6FD">Images</text>
     </g>
   </g>
 
-  <g filter="url(#softShadow)">
-    <rect x="481" y="148" width="318" height="374" rx="18" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1.25"/>
-    <rect x="481" y="148" width="318" height="5" rx="2.5" fill="#0F766E"/>
-    <text x="513" y="194" class="tag" fill="#0F766E">02 WORKSPACE</text>
-    <text x="513" y="228" class="step">Organize and mark up</text>
-    <text x="513" y="260" class="body">Reorder documents and pages,</text>
-    <text x="513" y="281" class="body">review in the reader, search,</text>
-    <text x="513" y="302" class="body">annotate, tag, comment, and sign.</text>
+  <g transform="translate(481 144)" filter="url(#shadow)">
+    <rect width="318" height="392" rx="22" class="workspaceCard"/>
+    <rect width="318" height="5" rx="2.5" fill="#2DD4BF"/>
+    <text x="32" y="50" class="tag" fill="#5EEAD4">02 WORKSPACE</text>
+    <text x="32" y="86" class="step">Organize and mark up</text>
+    <text x="32" y="124" class="body">Review in the reader, reorder</text>
+    <text x="32" y="146" class="body">pages, search, annotate, tag,</text>
+    <text x="32" y="168" class="body">comment, and place signatures.</text>
 
-    <g transform="translate(536 348)">
-      <rect x="0" y="0" width="58" height="98" rx="12" fill="#FFFFFF" stroke="#CCFBF1"/>
-      <rect x="13" y="17" width="32" height="18" rx="5" fill="#CBD5E1"/>
-      <rect x="13" y="45" width="32" height="18" rx="5" fill="#CBD5E1"/>
-      <rect x="13" y="74" width="32" height="8" rx="4" fill="#94A3B8"/>
+    <g transform="translate(46 218)">
+      <rect x="0" y="0" width="56" height="98" rx="12" fill="#0F172A" stroke="#274155"/>
+      <rect x="13" y="17" width="30" height="18" rx="5" fill="#334155"/>
+      <rect x="13" y="45" width="30" height="18" rx="5" fill="#334155"/>
+      <rect x="13" y="74" width="30" height="8" rx="4" fill="#64748B"/>
 
-      <rect x="82" y="-20" width="94" height="138" rx="14" fill="#FFFFFF" stroke="#CBD5E1"/>
-      <rect x="106" y="8" width="46" height="9" rx="4.5" fill="#94A3B8"/>
-      <rect x="106" y="37" width="46" height="7" rx="3.5" fill="#CBD5E1"/>
-      <rect x="106" y="62" width="46" height="8" rx="4" fill="#FACC15" opacity="0.72"/>
-      <path d="M107 96 C122 86 137 109 153 96" stroke="#0F766E" stroke-width="4" stroke-linecap="round"/>
+      <rect x="84" y="-20" width="94" height="138" rx="14" fill="#F8FAFC" stroke="#CBD5E1"/>
+      <rect x="108" y="8" width="46" height="9" rx="4.5" fill="#94A3B8"/>
+      <rect x="108" y="37" width="46" height="7" rx="3.5" fill="#CBD5E1"/>
+      <rect x="108" y="62" width="46" height="8" rx="4" fill="#FACC15" opacity="0.78"/>
+      <path d="M109 96 C124 86 139 109 155 96" stroke="#0F766E" stroke-width="4" stroke-linecap="round"/>
 
-      <rect x="200" y="0" width="58" height="98" rx="12" fill="#FFFFFF" stroke="#CCFBF1"/>
-      <circle cx="218" cy="26" r="5" fill="#0F766E"/>
-      <rect x="230" y="22" width="16" height="7" rx="3.5" fill="#CBD5E1"/>
-      <circle cx="218" cy="52" r="5" fill="#7C3AED"/>
-      <rect x="230" y="48" width="16" height="7" rx="3.5" fill="#CBD5E1"/>
-      <circle cx="218" cy="78" r="5" fill="#F59E0B"/>
-      <rect x="230" y="74" width="16" height="7" rx="3.5" fill="#CBD5E1"/>
+      <rect x="206" y="0" width="56" height="98" rx="12" fill="#0F172A" stroke="#274155"/>
+      <circle cx="224" cy="26" r="5" fill="#2DD4BF"/>
+      <rect x="236" y="22" width="15" height="7" rx="3.5" fill="#475569"/>
+      <circle cx="224" cy="52" r="5" fill="#A78BFA"/>
+      <rect x="236" y="48" width="15" height="7" rx="3.5" fill="#475569"/>
+      <circle cx="224" cy="78" r="5" fill="#F59E0B"/>
+      <rect x="236" y="74" width="15" height="7" rx="3.5" fill="#475569"/>
     </g>
 
-    <g transform="translate(513 476)">
-      <rect x="0" y="0" width="54" height="28" rx="14" fill="#CCFBF1"/>
-      <text x="27" y="19" text-anchor="middle" class="chip" fill="#0F766E">Tags</text>
-      <rect x="64" y="0" width="90" height="28" rx="14" fill="#CCFBF1"/>
-      <text x="109" y="19" text-anchor="middle" class="chip" fill="#0F766E">Comments</text>
-      <rect x="164" y="0" width="56" height="28" rx="14" fill="#CCFBF1"/>
-      <text x="192" y="19" text-anchor="middle" class="chip" fill="#0F766E">Ink</text>
-    </g>
-  </g>
-
-  <g filter="url(#softShadow)">
-    <rect x="874" y="172" width="318" height="326" rx="18" class="card"/>
-    <rect x="874" y="172" width="318" height="5" rx="2.5" fill="#7C3AED"/>
-    <text x="906" y="218" class="tag" fill="#7C3AED">03 OUTPUT</text>
-    <text x="906" y="252" class="step">Save or export</text>
-    <text x="906" y="284" class="body">Keep editing in a project package</text>
-    <text x="906" y="305" class="body">or create Markdown, PDF, HTML,</text>
-    <text x="906" y="326" class="body">and image exports.</text>
-
-    <g transform="translate(906 370)">
-      <rect x="0" y="0" width="110" height="30" rx="15" fill="#EDE9FE"/>
-      <text x="55" y="20" text-anchor="middle" class="chip" fill="#6D28D9">.pdfoldproj</text>
-      <rect x="120" y="0" width="58" height="30" rx="15" fill="#EDE9FE"/>
-      <text x="149" y="20" text-anchor="middle" class="chip" fill="#6D28D9">PDF</text>
-      <rect x="188" y="0" width="66" height="30" rx="15" fill="#EDE9FE"/>
-      <text x="221" y="20" text-anchor="middle" class="chip" fill="#6D28D9">DOCX</text>
-
-      <rect x="0" y="42" width="48" height="30" rx="15" fill="#EDE9FE"/>
-      <text x="24" y="62" text-anchor="middle" class="chip" fill="#6D28D9">MD</text>
-      <rect x="58" y="42" width="54" height="30" rx="15" fill="#EDE9FE"/>
-      <text x="85" y="62" text-anchor="middle" class="chip" fill="#6D28D9">TXT</text>
-      <rect x="122" y="42" width="64" height="30" rx="15" fill="#EDE9FE"/>
-      <text x="154" y="62" text-anchor="middle" class="chip" fill="#6D28D9">HTML</text>
-      <rect x="196" y="42" width="82" height="30" rx="15" fill="#EDE9FE"/>
-      <text x="237" y="62" text-anchor="middle" class="chip" fill="#6D28D9">PNG/JPG</text>
+    <g transform="translate(36 350)">
+      <rect x="0" y="0" width="54" height="28" rx="14" fill="#064E3B" stroke="#2DD4BF"/>
+      <text x="27" y="19" text-anchor="middle" class="chip" fill="#CCFBF1">Tags</text>
+      <rect x="66" y="0" width="92" height="28" rx="14" fill="#064E3B" stroke="#2DD4BF"/>
+      <text x="112" y="19" text-anchor="middle" class="chip" fill="#CCFBF1">Comments</text>
+      <rect x="170" y="0" width="56" height="28" rx="14" fill="#064E3B" stroke="#2DD4BF"/>
+      <text x="198" y="19" text-anchor="middle" class="chip" fill="#CCFBF1">Ink</text>
     </g>
   </g>
 
-  <path d="M421 335 H457" class="arrow"/>
-  <path d="M445 324 L458 335 L445 346" class="arrow"/>
-  <path d="M823 335 H859" class="arrow"/>
-  <path d="M847 324 L860 335 L847 346" class="arrow"/>
+  <g transform="translate(876 170)" filter="url(#shadow)">
+    <rect width="318" height="340" rx="20" class="card"/>
+    <rect width="318" height="5" rx="2.5" fill="#A78BFA"/>
+    <text x="32" y="50" class="tag" fill="#C4B5FD">03 OUTPUT</text>
+    <text x="32" y="86" class="step">Export artifacts</text>
+    <text x="32" y="124" class="body">Create clean Markdown, PDF,</text>
+    <text x="32" y="146" class="body">Word, text, HTML, and image</text>
+    <text x="32" y="168" class="body">outputs from the workspace.</text>
 
-  <g transform="translate(248 580)">
-    <rect width="784" height="44" rx="22" fill="#F0FDF4" stroke="#BBF7D0"/>
-    <circle cx="28" cy="22" r="6" fill="#16A34A"/>
-    <text x="48" y="27" class="small">Local-first: documents, metadata, markup, and exports stay on your Mac.</text>
+    <g transform="translate(32 214)">
+      <rect x="0" y="0" width="58" height="30" rx="15" fill="#2E1065" stroke="#A78BFA"/>
+      <text x="29" y="20" text-anchor="middle" class="chip" fill="#EDE9FE">PDF</text>
+      <rect x="70" y="0" width="66" height="30" rx="15" fill="#2E1065" stroke="#A78BFA"/>
+      <text x="103" y="20" text-anchor="middle" class="chip" fill="#EDE9FE">DOCX</text>
+      <rect x="148" y="0" width="48" height="30" rx="15" fill="#2E1065" stroke="#A78BFA"/>
+      <text x="172" y="20" text-anchor="middle" class="chip" fill="#EDE9FE">MD</text>
+      <rect x="208" y="0" width="54" height="30" rx="15" fill="#2E1065" stroke="#A78BFA"/>
+      <text x="235" y="20" text-anchor="middle" class="chip" fill="#EDE9FE">TXT</text>
+
+      <rect x="0" y="44" width="64" height="30" rx="15" fill="#2E1065" stroke="#A78BFA"/>
+      <text x="32" y="64" text-anchor="middle" class="chip" fill="#EDE9FE">HTML</text>
+      <rect x="76" y="44" width="82" height="30" rx="15" fill="#2E1065" stroke="#A78BFA"/>
+      <text x="117" y="64" text-anchor="middle" class="chip" fill="#EDE9FE">PNG/JPG</text>
+      <rect x="170" y="44" width="78" height="30" rx="15" fill="#2E1065" stroke="#A78BFA"/>
+      <text x="209" y="64" text-anchor="middle" class="chip" fill="#EDE9FE">Print</text>
+    </g>
+  </g>
+
+  <path d="M424 340 H456" class="arrow"/>
+  <path d="M444 329 L458 340 L444 351" class="arrow"/>
+  <path d="M824 340 H856" class="arrow"/>
+  <path d="M844 329 L858 340 L844 351" class="arrow"/>
+
+  <g transform="translate(248 596)">
+    <rect width="784" height="44" rx="22" fill="#08251C" stroke="#166534"/>
+    <circle cx="28" cy="22" r="6" fill="#22C55E"/>
+    <text x="48" y="27" class="caption">Local-first: documents, metadata, markup, and exports stay on your Mac.</text>
   </g>
 </svg>

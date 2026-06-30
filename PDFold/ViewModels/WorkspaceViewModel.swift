@@ -132,8 +132,9 @@ final class WorkspaceViewModel {
     var pendingPasswordURL: URL? = nil
     var pendingPasswordPDF: PDFDocument? = nil
     var isShowingPasswordPrompt = false
-    var currentTool: AnnotationTool = .none
-    var isShowingExport = false
+    var currentTool: AnnotationTool = .none {
+        didSet { if oldValue != currentTool { selectedAnnotation = nil } }
+    }
     var isShowingSearch = false
     var isShowingSignaturePalette = false
     var searchQuery = ""
@@ -685,6 +686,16 @@ final class WorkspaceViewModel {
             let ann = PDFAnnotation(bounds: bounds, forType: .stamp, withProperties: nil)
             ann.setValue(image, forAnnotationKey: .widgetValue)
             page.addAnnotation(ann)
+            let placementID = placement.id
+            undoManager?.registerUndo(withTarget: self) { vm in
+                page.removeAnnotation(ann)
+                vm.document.workspace.signatures.removeAll { $0.id == placementID }
+            }
+        } else {
+            let placementID = placement.id
+            undoManager?.registerUndo(withTarget: self) { vm in
+                vm.document.workspace.signatures.removeAll { $0.id == placementID }
+            }
         }
         undoManager?.setActionName("Place Signature")
     }

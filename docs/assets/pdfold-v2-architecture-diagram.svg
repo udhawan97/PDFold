@@ -1,141 +1,145 @@
-<svg width="1280" height="760" viewBox="0 0 1280 760" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+<svg width="1280" height="820" viewBox="0 0 1280 820" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">PDFold Technical Architecture</title>
-  <desc id="desc">A clean technical architecture diagram showing the PDFold SwiftUI app surface, workspace state, PDFKit services, local artifacts, exports, and release guardrails.</desc>
+  <desc id="desc">Dark-mode technical architecture diagram showing the PDFold SwiftUI app surface, workspace state, PDFKit services, local persistence, exports, and release guardrails.</desc>
   <defs>
-    <filter id="softShadow" x="-8%" y="-8%" width="116%" height="116%">
-      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0F172A" flood-opacity="0.08"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#070B14"/>
+      <stop offset="0.58" stop-color="#0B1220"/>
+      <stop offset="1" stop-color="#071713"/>
+    </linearGradient>
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M 56 0 L 0 0 0 56" stroke="#1F3147" stroke-width="1" opacity="0.20"/>
+    </pattern>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000000" flood-opacity="0.34"/>
     </filter>
     <style>
-      .title { font: 750 30px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0F172A; }
-      .subtitle { font: 500 15px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #475569; }
-      .layerTitle { font: 750 17px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0F172A; }
-      .body { font: 500 13px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #475569; }
-      .chip { font: 700 11.5px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-      .tag { font: 750 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: 1.3px; }
-      .layer { fill: #FFFFFF; stroke: #E2E8F0; stroke-width: 1.25; }
-      .rail { fill: #F0FDF4; stroke: #BBF7D0; stroke-width: 1.25; }
-      .arrow { stroke: #94A3B8; stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; }
+      .title { font: 800 32px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #F8FAFC; }
+      .subtitle { font: 550 15px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #B6C3D4; }
+      .layerTitle { font: 800 17px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #F8FAFC; }
+      .body { font: 550 13px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #A8B6C8; }
+      .chip { font: 800 11.5px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      .tag { font: 800 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: 1.5px; }
+      .layer { fill: #101827; stroke: #2B3F5C; stroke-width: 1.25; }
+      .stateLayer { fill: #08251F; stroke: #0F766E; stroke-width: 1.25; }
+      .engineLayer { fill: #111A34; stroke: #6366F1; stroke-width: 1.25; }
+      .artifactLayer { fill: #1B1430; stroke: #A78BFA; stroke-width: 1.25; }
+      .exportLayer { fill: #241609; stroke: #F59E0B; stroke-width: 1.25; }
+      .rail { fill: #08251C; stroke: #22C55E; stroke-width: 1.25; }
+      .arrow { stroke: #64748B; stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; }
     </style>
   </defs>
 
-  <rect width="1280" height="760" rx="24" fill="#F8FAFC"/>
-  <rect x="32" y="32" width="1216" height="696" rx="22" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <rect width="1280" height="820" rx="28" fill="#020617"/>
+  <rect x="32" y="32" width="1216" height="756" rx="26" fill="url(#bg)"/>
+  <rect x="32" y="32" width="1216" height="756" rx="26" fill="url(#grid)"/>
+  <rect x="32" y="32" width="1216" height="756" rx="26" stroke="#1F3147"/>
 
   <text x="640" y="78" text-anchor="middle" class="title">PDFold Technical Architecture</text>
-  <text x="640" y="108" text-anchor="middle" class="subtitle">Native SwiftUI document app backed by observable workspace state, PDFKit processing, local packages, and export guardrails.</text>
+  <text x="640" y="108" text-anchor="middle" class="subtitle">SwiftUI document app, observable workspace state, PDFKit processing, local persistence, and export guardrails.</text>
 
-  <g filter="url(#softShadow)">
-    <rect x="86" y="150" width="834" height="84" rx="14" class="layer"/>
-    <rect x="86" y="150" width="5" height="84" rx="2.5" fill="#2563EB"/>
-    <text x="116" y="184" class="tag" fill="#2563EB">APP SHELL</text>
-    <text x="116" y="211" class="body">DocumentGroup app entry, command wiring, and user-facing workspace window.</text>
-    <g transform="translate(548 177)">
-      <rect x="0" y="0" width="104" height="28" rx="14" fill="#DBEAFE"/>
-      <text x="52" y="19" text-anchor="middle" class="chip" fill="#1D4ED8">PDFoldApp</text>
-      <rect x="114" y="0" width="132" height="28" rx="14" fill="#DBEAFE"/>
-      <text x="180" y="19" text-anchor="middle" class="chip" fill="#1D4ED8">DocumentGroup</text>
+  <g transform="translate(86 148)" filter="url(#shadow)">
+    <rect width="820" height="88" rx="16" class="layer"/>
+    <rect width="5" height="88" rx="2.5" fill="#38BDF8"/>
+    <text x="30" y="34" class="tag" fill="#67E8F9">APP SHELL</text>
+    <text x="30" y="62" class="body">DocumentGroup app entry, command wiring, and user-facing workspace window.</text>
+    <g transform="translate(516 30)">
+      <rect x="0" y="0" width="104" height="28" rx="14" fill="#082F49" stroke="#38BDF8"/>
+      <text x="52" y="19" text-anchor="middle" class="chip" fill="#BAE6FD">PDFoldApp</text>
+      <rect x="116" y="0" width="132" height="28" rx="14" fill="#082F49" stroke="#38BDF8"/>
+      <text x="182" y="19" text-anchor="middle" class="chip" fill="#BAE6FD">DocumentGroup</text>
     </g>
   </g>
 
-  <g filter="url(#softShadow)">
-    <rect x="86" y="258" width="834" height="92" rx="14" class="layer"/>
-    <rect x="86" y="258" width="5" height="92" rx="2.5" fill="#0EA5E9"/>
-    <text x="116" y="292" class="tag" fill="#0284C7">SWIFTUI VIEWS</text>
-    <text x="116" y="319" class="body">Sidebar, reader, inspector, search, toolbar, guide, and export actions.</text>
-    <g transform="translate(438 286)">
-      <rect x="0" y="0" width="104" height="28" rx="14" fill="#E0F2FE"/>
-      <text x="52" y="19" text-anchor="middle" class="chip" fill="#0369A1">ContentView</text>
-      <rect x="114" y="0" width="112" height="28" rx="14" fill="#E0F2FE"/>
-      <text x="170" y="19" text-anchor="middle" class="chip" fill="#0369A1">ReadingCanvas</text>
-      <rect x="236" y="0" width="108" height="28" rx="14" fill="#E0F2FE"/>
-      <text x="290" y="19" text-anchor="middle" class="chip" fill="#0369A1">InspectorView</text>
+  <g transform="translate(86 260)" filter="url(#shadow)">
+    <rect width="820" height="96" rx="16" class="layer"/>
+    <rect width="5" height="96" rx="2.5" fill="#0EA5E9"/>
+    <text x="30" y="34" class="tag" fill="#7DD3FC">SWIFTUI VIEWS</text>
+    <text x="30" y="62" class="body">Sidebar, reader, inspector, search, toolbar, guide, and export actions.</text>
+    <g transform="translate(430 34)">
+      <rect x="0" y="0" width="104" height="28" rx="14" fill="#082F49" stroke="#0EA5E9"/>
+      <text x="52" y="19" text-anchor="middle" class="chip" fill="#BAE6FD">ContentView</text>
+      <rect x="116" y="0" width="120" height="28" rx="14" fill="#082F49" stroke="#0EA5E9"/>
+      <text x="176" y="19" text-anchor="middle" class="chip" fill="#BAE6FD">ReadingCanvas</text>
+      <rect x="248" y="0" width="112" height="28" rx="14" fill="#082F49" stroke="#0EA5E9"/>
+      <text x="304" y="19" text-anchor="middle" class="chip" fill="#BAE6FD">InspectorView</text>
     </g>
   </g>
 
-  <g filter="url(#softShadow)">
-    <rect x="86" y="374" width="834" height="92" rx="14" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1.25"/>
-    <rect x="86" y="374" width="5" height="92" rx="2.5" fill="#0F766E"/>
-    <text x="116" y="408" class="tag" fill="#0F766E">WORKSPACE STATE</text>
-    <text x="116" y="435" class="body">Loaded PDFs, page order, metadata, annotations, search, undo, and export state.</text>
-    <g transform="translate(438 402)">
-      <rect x="0" y="0" width="158" height="28" rx="14" fill="#CCFBF1"/>
-      <text x="79" y="19" text-anchor="middle" class="chip" fill="#0F766E">WorkspaceViewModel</text>
-      <rect x="168" y="0" width="154" height="28" rx="14" fill="#CCFBF1"/>
-      <text x="245" y="19" text-anchor="middle" class="chip" fill="#0F766E">WorkspaceDocument</text>
-      <rect x="332" y="0" width="88" height="28" rx="14" fill="#CCFBF1"/>
-      <text x="376" y="19" text-anchor="middle" class="chip" fill="#0F766E">PageRef</text>
+  <g transform="translate(86 380)" filter="url(#shadow)">
+    <rect width="820" height="96" rx="16" class="stateLayer"/>
+    <rect width="5" height="96" rx="2.5" fill="#2DD4BF"/>
+    <text x="30" y="34" class="tag" fill="#5EEAD4">WORKSPACE STATE</text>
+    <text x="30" y="62" class="body">Loaded PDFs, page order, metadata, annotations, search, undo, and export state.</text>
+    <g transform="translate(408 34)">
+      <rect x="0" y="0" width="158" height="28" rx="14" fill="#064E3B" stroke="#2DD4BF"/>
+      <text x="79" y="19" text-anchor="middle" class="chip" fill="#CCFBF1">WorkspaceViewModel</text>
+      <rect x="170" y="0" width="154" height="28" rx="14" fill="#064E3B" stroke="#2DD4BF"/>
+      <text x="247" y="19" text-anchor="middle" class="chip" fill="#CCFBF1">WorkspaceDocument</text>
+      <rect x="336" y="0" width="88" height="28" rx="14" fill="#064E3B" stroke="#2DD4BF"/>
+      <text x="380" y="19" text-anchor="middle" class="chip" fill="#CCFBF1">PageRef</text>
     </g>
   </g>
 
-  <g filter="url(#softShadow)">
-    <rect x="86" y="490" width="834" height="102" rx="14" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1.25"/>
-    <rect x="86" y="490" width="5" height="102" rx="2.5" fill="#4F46E5"/>
-    <text x="116" y="524" class="tag" fill="#4F46E5">PDFKIT WORKFLOW SERVICES</text>
-    <text x="116" y="551" class="body">Import conversion, PDF composition, markup, page operations, password unlock, and artifact writers.</text>
-    <g transform="translate(326 568)">
-      <rect x="0" y="0" width="174" height="28" rx="14" fill="#E0E7FF"/>
-      <text x="87" y="19" text-anchor="middle" class="chip" fill="#3730A3">DocumentImportConverter</text>
-      <rect x="184" y="0" width="110" height="28" rx="14" fill="#E0E7FF"/>
-      <text x="239" y="19" text-anchor="middle" class="chip" fill="#3730A3">PDFKitEngine</text>
-      <rect x="304" y="0" width="114" height="28" rx="14" fill="#E0E7FF"/>
-      <text x="361" y="19" text-anchor="middle" class="chip" fill="#3730A3">PDFAnnotation</text>
-      <rect x="428" y="0" width="98" height="28" rx="14" fill="#E0E7FF"/>
-      <text x="477" y="19" text-anchor="middle" class="chip" fill="#3730A3">PDFView</text>
+  <g transform="translate(86 500)" filter="url(#shadow)">
+    <rect width="820" height="106" rx="16" class="engineLayer"/>
+    <rect width="5" height="106" rx="2.5" fill="#818CF8"/>
+    <text x="30" y="34" class="tag" fill="#C4B5FD">PDFKIT WORKFLOW SERVICES</text>
+    <text x="30" y="62" class="body">Import conversion, PDF composition, markup, page operations, password unlock, and artifact writers.</text>
+    <g transform="translate(218 72)">
+      <rect x="0" y="0" width="174" height="28" rx="14" fill="#312E81" stroke="#818CF8"/>
+      <text x="87" y="19" text-anchor="middle" class="chip" fill="#E0E7FF">DocumentImportConverter</text>
+      <rect x="186" y="0" width="112" height="28" rx="14" fill="#312E81" stroke="#818CF8"/>
+      <text x="242" y="19" text-anchor="middle" class="chip" fill="#E0E7FF">PDFKitEngine</text>
+      <rect x="310" y="0" width="116" height="28" rx="14" fill="#312E81" stroke="#818CF8"/>
+      <text x="368" y="19" text-anchor="middle" class="chip" fill="#E0E7FF">PDFAnnotation</text>
+      <rect x="438" y="0" width="92" height="28" rx="14" fill="#312E81" stroke="#818CF8"/>
+      <text x="484" y="19" text-anchor="middle" class="chip" fill="#E0E7FF">PDFView</text>
     </g>
   </g>
 
-  <g filter="url(#softShadow)">
-    <rect x="86" y="616" width="400" height="66" rx="14" fill="#FAF5FF" stroke="#E9D5FF" stroke-width="1.25"/>
-    <rect x="86" y="616" width="5" height="66" rx="2.5" fill="#7C3AED"/>
-    <text x="116" y="648" class="tag" fill="#7C3AED">LOCAL PROJECT PACKAGE</text>
-    <text x="116" y="671" class="body">.pdfoldproj with workspace JSON and member PDF data</text>
+  <g transform="translate(86 634)" filter="url(#shadow)">
+    <rect width="400" height="66" rx="16" class="artifactLayer"/>
+    <rect width="5" height="66" rx="2.5" fill="#A78BFA"/>
+    <text x="30" y="31" class="tag" fill="#C4B5FD">LOCAL DOCUMENT STATE</text>
+    <text x="30" y="54" class="body">Workspace metadata and member PDF data</text>
   </g>
 
-  <g filter="url(#softShadow)">
-    <rect x="520" y="616" width="400" height="66" rx="14" fill="#FFF7ED" stroke="#FED7AA" stroke-width="1.25"/>
-    <rect x="520" y="616" width="5" height="66" rx="2.5" fill="#F97316"/>
-    <text x="550" y="648" class="tag" fill="#EA580C">EXPORT ARTIFACTS</text>
-    <text x="550" y="671" class="body">PDF, DOCX, MD, TXT, HTML, PNG, and JPEG</text>
+  <g transform="translate(520 634)" filter="url(#shadow)">
+    <rect width="386" height="66" rx="16" class="exportLayer"/>
+    <rect width="5" height="66" rx="2.5" fill="#F59E0B"/>
+    <text x="30" y="31" class="tag" fill="#FDBA74">EXPORT ARTIFACTS</text>
+    <text x="30" y="54" class="body">PDF, DOCX, MD, TXT, HTML, PNG, and JPEG</text>
   </g>
 
-  <g filter="url(#softShadow)">
-    <rect x="954" y="150" width="240" height="532" rx="16" class="rail"/>
-    <rect x="954" y="150" width="240" height="5" rx="2.5" fill="#16A34A"/>
-    <text x="986" y="190" class="tag" fill="#16A34A">RELEASE GUARDRAILS</text>
-
-    <g transform="translate(986 228)">
-      <circle cx="6" cy="6" r="5" fill="#16A34A"/>
+  <g transform="translate(954 148)" filter="url(#shadow)">
+    <rect width="240" height="552" rx="18" class="rail"/>
+    <rect width="240" height="5" rx="2.5" fill="#22C55E"/>
+    <text x="32" y="42" class="tag" fill="#86EFAC">RELEASE GUARDRAILS</text>
+    <g transform="translate(32 82)">
+      <circle cx="6" cy="6" r="5" fill="#22C55E"/>
       <text x="22" y="10" class="body">Import size limits</text>
+      <circle cx="6" cy="48" r="5" fill="#22C55E"/>
+      <text x="22" y="52" class="body">Ink annotation repair</text>
+      <circle cx="6" cy="90" r="5" fill="#22C55E"/>
+      <text x="22" y="94" class="body">Serialization fallback</text>
+      <circle cx="6" cy="132" r="5" fill="#22C55E"/>
+      <text x="22" y="136" class="body">Bounded image export</text>
+      <circle cx="6" cy="174" r="5" fill="#22C55E"/>
+      <text x="22" y="178" class="body">Write-error reporting</text>
     </g>
-    <g transform="translate(986 270)">
-      <circle cx="6" cy="6" r="5" fill="#16A34A"/>
-      <text x="22" y="10" class="body">Ink annotation repair</text>
-    </g>
-    <g transform="translate(986 312)">
-      <circle cx="6" cy="6" r="5" fill="#16A34A"/>
-      <text x="22" y="10" class="body">Serialization fallback</text>
-    </g>
-    <g transform="translate(986 354)">
-      <circle cx="6" cy="6" r="5" fill="#16A34A"/>
-      <text x="22" y="10" class="body">Bounded image export</text>
-    </g>
-    <g transform="translate(986 396)">
-      <circle cx="6" cy="6" r="5" fill="#16A34A"/>
-      <text x="22" y="10" class="body">Write-error reporting</text>
-    </g>
-
-    <rect x="986" y="472" width="176" height="74" rx="12" fill="#FFFFFF" stroke="#BBF7D0"/>
-    <text x="1006" y="503" class="tag" fill="#16A34A">LOCAL INSTALLER</text>
-    <text x="1006" y="527" class="body">xcodebuild, signing,</text>
-    <text x="1006" y="548" class="body">Desktop launcher</text>
+    <rect x="32" y="386" width="176" height="86" rx="14" fill="#0B1220" stroke="#166534"/>
+    <text x="52" y="420" class="tag" fill="#86EFAC">LOCAL INSTALLER</text>
+    <text x="52" y="446" class="body">xcodebuild, signing,</text>
+    <text x="52" y="468" class="body">Desktop launcher</text>
   </g>
 
-  <path d="M503 240 V254" class="arrow"/>
-  <path d="M493 245 L503 256 L513 245" class="arrow"/>
-  <path d="M503 356 V370" class="arrow"/>
-  <path d="M493 361 L503 372 L513 361" class="arrow"/>
-  <path d="M503 472 V486" class="arrow"/>
-  <path d="M493 477 L503 488 L513 477" class="arrow"/>
-  <path d="M503 598 V612" class="arrow"/>
-  <path d="M493 603 L503 614 L513 603" class="arrow"/>
+  <path d="M496 246 V256" class="arrow"/>
+  <path d="M486 248 L496 258 L506 248" class="arrow"/>
+  <path d="M496 366 V376" class="arrow"/>
+  <path d="M486 368 L496 378 L506 368" class="arrow"/>
+  <path d="M496 486 V496" class="arrow"/>
+  <path d="M486 488 L496 498 L506 488" class="arrow"/>
+  <path d="M496 616 V630" class="arrow"/>
+  <path d="M486 622 L496 632 L506 622" class="arrow"/>
 </svg>

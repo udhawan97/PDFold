@@ -102,7 +102,7 @@ PDFold brings that fragmented process into one focused workspace, making documen
 |  | Audience | What to Notice |
 | --- | --- | --- |
 | 🧑‍💼 | Recruiters | A polished native macOS app with a clear user problem, visible product thinking, and practical engineering choices. |
-| 🧑‍💻 | Developers | SwiftUI, PDFKit, document packages, custom import conversion, metadata persistence, multi-format export, undo-aware page operations, crash hardening, and installer automation. |
+| 🧑‍💻 | Developers | SwiftUI, PDFKit, custom import conversion, metadata persistence, multi-format export, undo-aware page operations, crash hardening, and installer automation. |
 | 📎 | Actual humans with PDFs | Drag files in, make sense of them, sign what needs signing, export one clean document, and move on with your day. |
 
 ## What It Does
@@ -114,7 +114,7 @@ PDFold brings that fragmented process into one focused workspace, making documen
 | 📖 | Read | Native PDF canvas, generated section banners, table of contents, sidebar navigation, inspector views, and search |
 | ✍️ | Mark up | Highlight, note, editable text overlay, ink, underline, strikeout, and signature tools |
 | 🏷️ | Track | Workspace tags, workspace comments, and an inspector markup list for reviewing annotations |
-| 💾 | Save | Editable `.pdfoldproj` document packages with workspace metadata, tags, comments, signatures, and source PDF data |
+| 💾 | Save | Local workspace state with metadata, tags, comments, signatures, and source PDF data |
 | 📤 | Export | PDF, Word `.docx`, Markdown `.md`, text, HTML, PNG pages, JPEG pages, or printable workspace |
 | 🔑 | Unlock | Password-protected PDF prompt using native PDFKit behavior |
 | 🛡️ | Protect | Local-first by design; your files stay on your Mac |
@@ -137,13 +137,13 @@ flowchart LR
     UI["SwiftUI app<br/>sidebar, reader, inspector"]
     State["Workspace state<br/>documents, pages, tags, comments"]
     Engine["PDFKit engine<br/>convert, compose, annotate"]
-    Package["Local package<br/>.pdfoldproj"]
+    LocalState["Local document state<br/>metadata and PDF data"]
     Export["Export artifacts<br/>PDF, DOCX, MD, TXT, HTML, PNG, JPG"]
 
     Files --> UI
     UI --> State
     State --> Engine
-    Engine <--> Package
+    Engine <--> LocalState
     Engine --> Export
 ```
 
@@ -152,14 +152,14 @@ flowchart LR
 </p>
 
 <p align="center">
-  <em>High-level flow first, then the implementation view: SwiftUI views, observable workspace state, PDFKit services, local packages, exports, and release guardrails.</em>
+  <em>High-level flow first, then the implementation view: SwiftUI views, observable workspace state, PDFKit services, local persistence, exports, and release guardrails.</em>
 </p>
 
 |  | Layer | Responsibility |
 | --- | --- | --- |
 | 🖥️ | SwiftUI app | Presents the workspace, sidebar, reader, tools, search, and export actions |
 | ⚙️ | Document engine | Converts imports, builds the combined PDF, manages annotations, and writes exports |
-| 💾 | Local storage | Keeps editable `.pdfoldproj` packages and generated output on the user's Mac |
+| 💾 | Local storage | Keeps workspace state and generated output on the user's Mac |
 
 ## Why It Matters
 
@@ -184,7 +184,7 @@ PDFold is prepared for version `2.0`: a release-hardened local-first macOS workf
 
 |  | Area | Release Hardening |
 | --- | --- | --- |
-| 🏷️ | Workspace context | Tags and workspace comments are persisted in `.pdfoldproj` packages, with inspector tabs for metadata, tags, comments, and markup review. |
+| 🏷️ | Workspace context | Tags and workspace comments are persisted with saved workspaces, with inspector tabs for metadata, tags, comments, and markup review. |
 | ✍️ | Text editing | The text tool can create clean free-text boxes or convert selected PDF text into an editable overlay. |
 | 📝 | Markdown export | Workspaces can export `.md` files with a workspace summary, comments, document sections, and extracted PDF text. |
 | 🖊️ | Ink stability | Ink annotations now use PDFKit-native paths, and malformed legacy ink data is sanitized before display to prevent PDFKit drawing crashes. |
@@ -271,7 +271,7 @@ PDFold is a native SwiftUI document app. The setup script uses `xcodebuild` to p
 2. Drag in one or more files.
 3. Read, reorder, annotate, tag, comment, search, sign, rotate, or remove pages.
 4. Review workspace metadata, tags, comments, and markup in the inspector.
-5. Save a `.pdfoldproj` workspace if you want to keep editing later.
+5. Save the workspace if you want to keep editing later.
 6. Export a PDF, Word document, Markdown file, text file, HTML file, or page images when you need to share the workspace in a useful format.
 
 ## Technical Layout
@@ -362,7 +362,7 @@ Before shipping a build, verify the app from both sides: the developer path and 
 | 🧪 | Installer smoke test | `./scripts/install-mac.sh --no-open` builds, signs, installs, and refreshes the launcher |
 | 📥 | Import | Drag-and-drop works with multiple supported file types |
 | 🔑 | Protected PDFs | Password-protected PDFs show the unlock flow |
-| 💾 | Persistence | `.pdfoldproj` packages save and reopen correctly |
+| 💾 | Persistence | Saved workspaces reopen with metadata, markup, comments, and document data intact |
 | 🔎 | Search | Search results work across the combined workspace |
 | 🏷️ | Inspector | Tags, comments, info, and markup tabs reflect workspace state |
 | ✍️ | Annotation | Highlight, note, editable text, ink, underline, strikeout, and undo behavior work |

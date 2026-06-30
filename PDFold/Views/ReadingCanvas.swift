@@ -222,7 +222,8 @@ struct PDFViewRepresentable: NSViewRepresentable {
         @objc func handleClick(_ gesture: NSClickGestureRecognizer) {
             guard let pdfView else { return }
             let viewPoint = gesture.location(in: pdfView)
-            guard let page = pdfView.page(for: viewPoint, nearest: false) else { return }
+            guard let page = pdfView.page(for: viewPoint, nearest: false),
+                  !(page is BoundaryPage) else { return }
             let pagePoint = pdfView.convert(viewPoint, to: page)
 
             switch viewModel.currentTool {
