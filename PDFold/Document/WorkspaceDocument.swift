@@ -37,7 +37,9 @@ final class WorkspaceDocument: ReferenceFileDocument {
     ]
 
     static var readableContentTypes: [UTType] { [.pdfoldproj] + importableContentTypes }
-    static var writableContentTypes: [UTType] { [.pdfoldproj] }
+    // .pdf is listed second so macOS can autosave an imported PDF as a flat PDF
+    // (the first type, .pdfoldproj, remains the preferred format for Save As).
+    static var writableContentTypes: [UTType] { [.pdfoldproj, .pdf] }
 
     var workspace: Workspace
     var memberPDFData: [UUID: Data] = [:]
@@ -130,6 +132,22 @@ final class WorkspaceDocument: ReferenceFileDocument {
     // MARK: - Write
 
     func fileWrapper(snapshot: WorkspacePackage, configuration: WriteConfiguration) throws -> FileWrapper {
+        // When macOS autosaves an imported PDF document it uses .pdf as the content type.
+        // Return a flat PDF file wrapper so the autosave succeeds without errors.
+        if configuration.contentType.conforms(to: .pdf) {
+            let docs: [(MemberDocument, PDFDocument)] = snapshot.workspace.documents.compactMap { member in
+                guard let data = snapshot.memberPDFData[member.id],
+                      let pdf = PDFDocument(data: data) else { return nil }
+                return (member, pdf)
+            }
+            let flat = PDFKitEngine().concatenate(documents: docs, includeBanners: false)
+            guard let pdfData = PDFSerializer.data(from: flat) else {
+                throw CocoaError(.fileWriteUnknown)
+            }
+            return FileWrapper(regularFileWithContents: pdfData)
+        }
+
+        // Standard .pdfoldproj bundle
         let wsData = try JSONEncoder().encode(snapshot.workspace)
         let wsWrapper = FileWrapper(regularFileWithContents: wsData)
         wsWrapper.preferredFilename = "workspace.json"
