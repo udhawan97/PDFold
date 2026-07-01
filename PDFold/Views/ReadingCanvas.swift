@@ -145,12 +145,12 @@ private struct BottomBarBrand: View {
     var body: some View {
         HStack(spacing: .dsXS) {
             AppIconMark(size: 16)
-            Text("PDFold v3 workspace")
+            Text("pdFold v3 workspace")
                 .font(.system(size: 11, weight: .medium, design: .serif))
                 .foregroundStyle(Color.dsTextTertiary)
                 .lineLimit(1)
         }
-        .accessibilityLabel("PDFold version 3 workspace")
+        .accessibilityLabel("pdFold version 3 workspace")
     }
 }
 
@@ -246,11 +246,12 @@ struct PDFViewRepresentable: NSViewRepresentable {
 
     // MARK: - Coordinator
 
-    final class Coordinator: NSObject {
+    final class Coordinator: NSObject, NSPopoverDelegate {
         var viewModel: WorkspaceViewModel
         weak var pdfView: PDFoldPDFView?
         let inkOverlay = InkOverlayView()
         private weak var inlineEditor: InlineTextEditorOverlay?
+        private var notePopover: NSPopover?
 
         init(viewModel: WorkspaceViewModel) {
             self.viewModel = viewModel
@@ -286,7 +287,7 @@ struct PDFViewRepresentable: NSViewRepresentable {
         @objc func handleClick(_ gesture: NSClickGestureRecognizer) {
             guard let pdfView else { return }
             let viewPoint = gesture.location(in: pdfView)
-            guard let page = pdfView.page(for: viewPoint, nearest: false),
+            guard let page = pdfView.page(for: viewPoint, nearest: true),
                   !(page is BoundaryPage) else { return }
             let pagePoint = pdfView.convert(viewPoint, to: page)
 
@@ -350,14 +351,29 @@ struct PDFViewRepresentable: NSViewRepresentable {
         }
 
         private func showNoteEditor(for annotation: PDFAnnotation, near rect: CGRect, in view: NSView) {
-            let vc = NoteEditorViewController(annotation: annotation) { [weak self, weak view] message, isError in
-                self?.viewModel.showEditMessage(message, isError: isError)
-                view?.needsDisplay = true
-            }
+            notePopover?.close()
+            let vc = NoteEditorViewController(
+                annotation: annotation,
+                statusHandler: { [weak self, weak view] message, isError in
+                    self?.viewModel.showEditMessage(message, isError: isError)
+                    view?.needsDisplay = true
+                },
+                changeHandler: { [weak self, weak view] in
+                    self?.viewModel.markAnnotationsModified()
+                    view?.needsDisplay = true
+                }
+            )
             let popover = NSPopover()
             popover.contentViewController = vc
             popover.behavior = .transient
+            popover.delegate = self
+            notePopover = popover
             popover.show(relativeTo: rect, of: view, preferredEdge: .maxY)
+        }
+
+        func popoverDidClose(_ notification: Notification) {
+            guard let popover = notification.object as? NSPopover, popover === notePopover else { return }
+            notePopover = nil
         }
 
         private func showInlineTextEditor(for block: EditableTextBlock, pageRef: PageRef, on page: PDFPage, in pdfView: PDFoldPDFView) {
@@ -516,6 +532,7 @@ final class PDFoldPDFView: PDFView {
 final class NoteEditorViewController: NSViewController {
     private let annotation: PDFAnnotation
     private let statusHandler: (String, Bool) -> Void
+    private let changeHandler: () -> Void
     private weak var textView: NSTextView?
     private weak var scrollView: NSScrollView?
     private weak var sizeLabel: NSTextField?
@@ -530,7 +547,7 @@ final class NoteEditorViewController: NSViewController {
     private var didCommit = false
     private var didCancel = false
     private var isFreeTextAnnotation: Bool { annotation.type == "FreeText" }
-    private var isDraftFreeTextAnnotation: Bool {
+    private var isDraftAnnotation: Bool {
         (annotation.value(forAnnotationKey: WorkspaceViewModel.draftTextAnnotationKey) as? Bool) == true
     }
     private var isTextReplacementAnnotation: Bool {
@@ -541,9 +558,14 @@ final class NoteEditorViewController: NSViewController {
         return isFreeTextAnnotation ? "Text Box" : "Edit Note"
     }
 
-    init(annotation: PDFAnnotation, statusHandler: @escaping (String, Bool) -> Void = { _, _ in }) {
+    init(
+        annotation: PDFAnnotation,
+        statusHandler: @escaping (String, Bool) -> Void = { _, _ in },
+        changeHandler: @escaping () -> Void = {}
+    ) {
         self.annotation = annotation
         self.statusHandler = statusHandler
+        self.changeHandler = changeHandler
         self.originalSnapshot = PDFAnnotationEditSnapshot(annotation: annotation)
         let resolvedFont = annotation.font ?? .systemFont(ofSize: 16)
         self.editorFontFamily = resolvedFont.familyName ?? NSFont.systemFont(ofSize: 16).familyName ?? "System"
@@ -672,11 +694,12 @@ final class NoteEditorViewController: NSViewController {
         guard let textView else { return false }
         switch PDFEditingSupport.emptyEditAction(
             text: textView.string,
-            isDraft: isDraftFreeTextAnnotation,
+            isDraft: isDraftAnnotation,
             isReplacement: isTextReplacementAnnotation
         ) {
         case .removeDraft:
             annotation.page?.removeAnnotation(annotation)
+            changeHandler()
             return true
         case .rejectReplacement:
             statusHandler("Replacement text cannot be empty. Use a text box or a future redaction tool for removal.", true)
@@ -685,6 +708,11 @@ final class NoteEditorViewController: NSViewController {
             break
         }
         annotation.contents = textView.string
+        annotation.setValue(false, forAnnotationKey: WorkspaceViewModel.draftTextAnnotationKey)
+        if !isFreeTextAnnotation {
+            changeHandler()
+            return true
+        }
         if isFreeTextAnnotation {
             annotation.font = documentFont()
             annotation.fontColor = editorTextColor
@@ -699,18 +727,20 @@ final class NoteEditorViewController: NSViewController {
                 return false
             }
         }
-        if let document = annotation.page?.document, document.dataRepresentation() == nil {
+        if let document = annotation.page?.document, PDFSerializer.data(from: document) == nil {
             originalSnapshot.restore(to: annotation)
             statusHandler(PDFTextEditWarning.serializationFailed.message, true)
             return false
         }
+        changeHandler()
         return true
     }
 
     private func cancelChanges() {
         didCancel = true
-        if isDraftFreeTextAnnotation, (originalSnapshot.contents ?? "").isEmpty {
+        if isDraftAnnotation, (originalSnapshot.contents ?? "").isEmpty {
             annotation.page?.removeAnnotation(annotation)
+            changeHandler()
         } else {
             originalSnapshot.restore(to: annotation)
         }
@@ -1267,7 +1297,10 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
         // not just its size merged onto the original (pre-edit) block position. The box
         // commonly moves (its top-anchored height grows as text wraps) and re-using the
         // stale origin here placed the replacement text somewhere the user never saw it.
-        var pageBounds = pdfView.convert(textView.frame, to: page).standardized
+        // Two-step conversion (overlay-local → pdfView space → PDF page space) avoids
+        // relying on the overlay's frame origin always being (0,0).
+        let viewFrame = convert(textView.frame, to: pdfView)
+        var pageBounds = pdfView.convert(viewFrame, to: page).standardized
         pageBounds.size.width = max(24, pageBounds.width)
         pageBounds.size.height = max(24, pageBounds.height)
         let result = EditResult(

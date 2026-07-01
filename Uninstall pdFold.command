@@ -1,7 +1,9 @@
 #!/bin/zsh -f
 set -u
 
-APP_NAME="PDFold"
+PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+
+APP_NAME="pdFold"
 SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" && pwd)"
 UNINSTALLER="$SCRIPT_DIR/scripts/uninstall-mac.sh"
 

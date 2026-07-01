@@ -1,7 +1,10 @@
 #!/bin/zsh
 set -euo pipefail
 
-APP_NAME="PDFold"
+PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+
+APP_NAME="pdFold"
+LEGACY_APP_NAME="PDFold"
 REPO="udhawan97/PDFold"
 RELEASE_TAG="release-v3"
 CONFIGURATION="release"
@@ -25,15 +28,20 @@ STAGE_ROOT="${TMPDIR:-/tmp}/pdfold-install-$$"
 STAGED_APP="$STAGE_ROOT/$APP_NAME.app"
 INSTALL_DIR="$HOME/Applications"
 INSTALLED_APP="$INSTALL_DIR/$APP_NAME.app"
+LEGACY_INSTALLED_APP="$INSTALL_DIR/$LEGACY_APP_NAME.app"
 DESKTOP_LAUNCHER="$HOME/Desktop/$APP_NAME.command"
 DESKTOP_UNINSTALLER="$HOME/Desktop/Uninstall $APP_NAME.command"
 LEGACY_DESKTOP_LAUNCHER="$HOME/Desktop/$APP_NAME"
 LEGACY_DESKTOP_UPDATER="$HOME/Desktop/Update $APP_NAME.command"
+OLD_DESKTOP_LAUNCHER="$HOME/Desktop/$LEGACY_APP_NAME.command"
+OLD_DESKTOP_UNINSTALLER="$HOME/Desktop/Uninstall $LEGACY_APP_NAME.command"
+OLD_LEGACY_DESKTOP_LAUNCHER="$HOME/Desktop/$LEGACY_APP_NAME"
+OLD_LEGACY_DESKTOP_UPDATER="$HOME/Desktop/Update $LEGACY_APP_NAME.command"
 RELEASE_API="https://api.github.com/repos/$REPO/releases/tags/$RELEASE_TAG"
 
 usage() {
     cat <<USAGE
-PDFold installer
+pdFold installer
 
 Usage:
   scripts/install-mac.sh [options]
@@ -47,7 +55,7 @@ Options:
   --package-only   With --package, build the zip without installing locally.
   --help           Show this help.
 
-Re-running this script updates PDFold.
+Re-running this script updates pdFold.
 USAGE
 }
 
@@ -79,7 +87,7 @@ fail() {
 }
 
 cleanup() {
-    [[ -n "${STAGE_ROOT:-}" && -d "$STAGE_ROOT" ]] && rm -rf "$STAGE_ROOT"
+    [[ -n "${STAGE_ROOT:-}" && -d "$STAGE_ROOT" ]] && /bin/rm -rf "$STAGE_ROOT"
 }
 trap cleanup EXIT
 
@@ -119,9 +127,9 @@ done
 
 [[ "$(uname -s)" == "Darwin" ]] || fail "$APP_NAME only runs on macOS."
 
-mkdir -p "$BUILD_DIR" "$STAGE_ROOT"
+/bin/mkdir -p "$BUILD_DIR" "$STAGE_ROOT"
 cat > "$LOG_FILE" <<LOG
-PDFold install log
+pdFold install log
 Project: $PROJECT_ROOT
 Started: $(date)
 macOS: $(sw_vers -productVersion 2>/dev/null || printf "unknown")
@@ -131,13 +139,14 @@ LOG
 
 latest_release_zip_url() {
     print_debug "Checking release API: $RELEASE_API"
-    /usr/bin/python3 - "$RELEASE_API" "$LOG_FILE" <<'PY'
+    /usr/bin/python3 - "$RELEASE_API" "$LOG_FILE" "$APP_NAME.zip" <<'PY'
 import json
 import sys
 import urllib.request
 
 url = sys.argv[1]
 log_file = sys.argv[2]
+asset_name = sys.argv[3]
 try:
     with urllib.request.urlopen(url, timeout=20) as response:
         data = json.load(response)
@@ -147,12 +156,12 @@ except Exception as error:
     sys.exit(1)
 
 for asset in data.get("assets", []):
-    if asset.get("name") == "PDFold.zip" and asset.get("browser_download_url"):
+    if asset.get("name") == asset_name and asset.get("browser_download_url"):
         print(asset["browser_download_url"])
         sys.exit(0)
 with open(log_file, "a", encoding="utf-8") as log:
     available = ", ".join(asset.get("name", "<unnamed>") for asset in data.get("assets", [])) or "none"
-    log.write(f"No PDFold.zip asset found. Available assets: {available}\n")
+    log.write(f"No {asset_name} asset found. Available assets: {available}\n")
 sys.exit(1)
 PY
 }
@@ -193,35 +202,38 @@ capture_launch_diagnostics() {
 install_staged_app() {
     [[ -d "$STAGED_APP" ]] || fail "No staged app bundle was prepared."
 
-    if pgrep -x "$APP_NAME" >/dev/null 2>&1; then
+    if /usr/bin/pgrep -x "$APP_NAME" >/dev/null 2>&1; then
         print_step "Closing the currently running app"
         /usr/bin/osascript -e "tell application \"$APP_NAME\" to quit" >/dev/null 2>&1 || true
         for _ in {1..20}; do
-            pgrep -x "$APP_NAME" >/dev/null 2>&1 || break
-            sleep 0.25
+            /usr/bin/pgrep -x "$APP_NAME" >/dev/null 2>&1 || break
+            /bin/sleep 0.25
         done
     fi
 
     print_step "Copying app to $INSTALLED_APP"
-    mkdir -p "$INSTALL_DIR"
-    rm -rf "$INSTALLED_APP"
+    /bin/mkdir -p "$INSTALL_DIR"
+    /bin/rm -rf "$INSTALLED_APP" "$LEGACY_INSTALLED_APP"
     /usr/bin/ditto --norsrc "$STAGED_APP" "$INSTALLED_APP"
     /usr/bin/xattr -cr "$INSTALLED_APP" 2>/dev/null || true
     verify_app_bundle "$INSTALLED_APP"
 
     print_step "Refreshing Desktop commands"
     if [[ -d "$HOME/Desktop" ]]; then
-        rm -f "$DESKTOP_LAUNCHER" "$LEGACY_DESKTOP_LAUNCHER" "$LEGACY_DESKTOP_UPDATER"
+        /bin/rm -f "$DESKTOP_LAUNCHER" "$LEGACY_DESKTOP_LAUNCHER" "$LEGACY_DESKTOP_UPDATER" \
+            "$OLD_DESKTOP_LAUNCHER" "$OLD_DESKTOP_UNINSTALLER" "$OLD_LEGACY_DESKTOP_LAUNCHER" "$OLD_LEGACY_DESKTOP_UPDATER"
         cat > "$DESKTOP_LAUNCHER" <<'LAUNCHER'
 #!/bin/zsh
 set -euo pipefail
-curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/install.sh | zsh
+PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+/usr/bin/curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/install.sh | /bin/zsh
 LAUNCHER
         chmod +x "$DESKTOP_LAUNCHER" 2>/dev/null || print_note "Could not make the Desktop launcher executable."
         cat > "$DESKTOP_UNINSTALLER" <<'UNINSTALLER'
 #!/bin/zsh
 set -euo pipefail
-curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/scripts/uninstall-mac.sh | zsh
+PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+/usr/bin/curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/scripts/uninstall-mac.sh | /bin/zsh
 UNINSTALLER
         chmod +x "$DESKTOP_UNINSTALLER" 2>/dev/null || print_note "Could not make the Desktop uninstaller executable."
     else
@@ -231,8 +243,8 @@ UNINSTALLER
     if [[ $OPEN_AFTER_INSTALL -eq 1 ]]; then
         print_step "Opening $APP_NAME"
         open "$INSTALLED_APP" || fail "The app was installed, but macOS could not open it."
-        sleep 1
-        if ! pgrep -x "$APP_NAME" >/dev/null 2>&1; then
+        /bin/sleep 1
+        if ! /usr/bin/pgrep -x "$APP_NAME" >/dev/null 2>&1; then
             capture_launch_diagnostics
             fail "$APP_NAME opened but did not remain running. Check the install log for recent macOS launch diagnostics."
         fi
@@ -242,17 +254,17 @@ UNINSTALLER
 install_prebuilt_release() {
     local zip_url zip_path unzip_dir found_app
     zip_url="$(latest_release_zip_url)" || return 1
-    zip_path="$STAGE_ROOT/PDFold.zip"
+    zip_path="$STAGE_ROOT/$APP_NAME.zip"
     unzip_dir="$STAGE_ROOT/prebuilt"
 
     print_step "Downloading prebuilt $APP_NAME"
     /usr/bin/curl -fL "$zip_url" -o "$zip_path" >>"$LOG_FILE" 2>&1 || return 1
-    mkdir -p "$unzip_dir"
+    /bin/mkdir -p "$unzip_dir"
     /usr/bin/ditto -x -k "$zip_path" "$unzip_dir" >>"$LOG_FILE" 2>&1 || return 1
     found_app="$(find "$unzip_dir" -maxdepth 3 -name "$APP_NAME.app" -type d -print -quit)"
     [[ -n "$found_app" ]] || printf "Prebuilt zip did not contain %s.app\n" "$APP_NAME" >>"$LOG_FILE"
     [[ -n "$found_app" ]] || return 1
-    rm -rf "$STAGED_APP"
+    /bin/rm -rf "$STAGED_APP"
     /usr/bin/ditto --norsrc "$found_app" "$STAGED_APP"
     /usr/bin/xattr -cr "$STAGED_APP" 2>/dev/null || true
     verify_app_bundle "$STAGED_APP"
@@ -264,7 +276,7 @@ build_icon() {
     local source_dir iconset
     source_dir="$PROJECT_ROOT/PDFold/Resources/Assets.xcassets/AppIcon.appiconset"
     iconset="$STAGE_ROOT/AppIcon.iconset"
-    mkdir -p "$iconset"
+    /bin/mkdir -p "$iconset"
 
     cp "$source_dir/AppIcon-16.png" "$iconset/icon_16x16.png"
     cp "$source_dir/AppIcon-32.png" "$iconset/icon_16x16@2x.png"
@@ -299,7 +311,7 @@ build_from_source() {
 
     if [[ $CLEAN_BUILD -eq 1 ]]; then
         print_step "Cleaning local SwiftPM build output"
-        rm -rf "$PROJECT_ROOT/.build/release" "$PROJECT_ROOT/.build/checkouts" "$PROJECT_ROOT/.build/repositories"
+        /bin/rm -rf "$PROJECT_ROOT/.build/release" "$PROJECT_ROOT/.build/checkouts" "$PROJECT_ROOT/.build/repositories"
     fi
 
     print_step "Building $APP_NAME with SwiftPM"
@@ -313,8 +325,8 @@ build_from_source() {
     [[ -x "$built_binary" ]] || fail "Build completed, but the $APP_NAME executable was not created."
 
     print_step "Assembling app bundle"
-    rm -rf "$STAGED_APP"
-    mkdir -p "$STAGED_APP/Contents/MacOS" "$STAGED_APP/Contents/Frameworks" "$STAGED_APP/Contents/Resources"
+    /bin/rm -rf "$STAGED_APP"
+    /bin/mkdir -p "$STAGED_APP/Contents/MacOS" "$STAGED_APP/Contents/Frameworks" "$STAGED_APP/Contents/Resources"
     cp "$built_binary" "$STAGED_APP/Contents/MacOS/$APP_NAME"
     if [[ -d "$(dirname "$built_binary")/PDFium.framework" ]]; then
         print_debug "Embedding PDFium.framework"
@@ -340,7 +352,7 @@ write_package() {
     package_dir="$(cd "$(dirname "$PACKAGE_PATH")" && pwd)"
     package_abs="$package_dir/$(basename "$PACKAGE_PATH")"
     print_step "Writing release zip"
-    rm -f "$package_abs"
+    /bin/rm -f "$package_abs"
     (cd "$STAGE_ROOT" && /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$APP_NAME.app" "$package_abs")
     print_note "Package: $package_abs"
 }
@@ -360,7 +372,7 @@ MESSAGE
     fi
 
     if [[ $PREBUILT_ONLY -eq 1 ]]; then
-        fail "No prebuilt GitHub release asset named PDFold.zip is available for $RELEASE_TAG yet."
+        fail "No prebuilt GitHub release asset named $APP_NAME.zip is available for $RELEASE_TAG yet."
     fi
 
     print_note "No prebuilt release was available. Building from source instead."
