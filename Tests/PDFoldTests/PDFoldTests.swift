@@ -619,6 +619,42 @@ final class InlineTextEditPlacementTests: XCTestCase {
 
         XCTAssertEqual(reopened.block.alignment?.nsTextAlignment, .right)
     }
+
+    func testInlineEditorToolbarControlsReceiveHitTests() throws {
+        let fixture = try makeInlineEditorFixture()
+        let doneButton = try XCTUnwrap(findSubview(in: fixture.overlay) { (button: NSButton) in
+            button.title == "Done"
+        })
+        let sizeField = try XCTUnwrap(findSubview(in: fixture.overlay) { (field: NSTextField) in
+            field.toolTip == "Font size" && field.isEditable
+        })
+        let textView = try XCTUnwrap(findSubview(in: fixture.overlay) { (_: NSTextView) in true })
+
+        let donePoint = doneButton.convert(NSPoint(x: doneButton.bounds.midX, y: doneButton.bounds.midY), to: fixture.overlay)
+        let sizePoint = sizeField.convert(NSPoint(x: sizeField.bounds.midX, y: sizeField.bounds.midY), to: fixture.overlay)
+        let textPoint = textView.convert(NSPoint(x: textView.bounds.midX, y: textView.bounds.midY), to: fixture.overlay)
+
+        XCTAssertTrue(fixture.overlay.hitTest(donePoint) is NSButton)
+        XCTAssertTrue(fixture.overlay.hitTest(sizePoint) is NSTextField)
+        XCTAssertTrue(fixture.overlay.hitTest(textPoint) is NSTextView)
+        XCTAssertNil(fixture.overlay.hitTest(NSPoint(x: fixture.overlay.bounds.maxX - 2, y: fixture.overlay.bounds.maxY - 2)))
+    }
+
+    func testInlineEditorCommitsTypedFontSizeWhenDoneIsPressed() throws {
+        let fixture = try makeInlineEditorFixture()
+        let sizeField = try XCTUnwrap(findSubview(in: fixture.overlay) { (field: NSTextField) in
+            field.toolTip == "Font size" && field.isEditable
+        })
+        let doneButton = try XCTUnwrap(findSubview(in: fixture.overlay) { (button: NSButton) in
+            button.title == "Done"
+        })
+
+        sizeField.stringValue = "14"
+        doneButton.performClick(nil)
+
+        let edit = try XCTUnwrap(fixture.committedEdit())
+        XCTAssertEqual(edit.fontSize, 14, accuracy: 0.01)
+    }
 }
 
 final class DocumentImportConverterTests: XCTestCase {
@@ -1156,6 +1192,64 @@ private func makeScaledTextPDF(text: String, fontSize: CGFloat, scale: CGFloat) 
         scale: scale
     )
     return PDFDocument(data: view.dataWithPDF(inside: view.bounds))!
+}
+
+private struct InlineEditorFixture {
+    let pdfView: PDFoldPDFView
+    let overlay: InlineTextEditorOverlay
+    let committedEdit: () -> InlineTextEditorOverlay.EditResult?
+}
+
+private func makeInlineEditorFixture() throws -> InlineEditorFixture {
+    let pdf = makePDF(pageTexts: ["Original text"])
+    let pdfView = PDFoldPDFView(frame: CGRect(x: 0, y: 0, width: 900, height: 1000))
+    pdfView.document = pdf
+    pdfView.autoScales = false
+    pdfView.scaleFactor = 1
+    pdfView.layoutDocumentView()
+
+    let page = try XCTUnwrap(pdf.page(at: 0))
+    let pageRef = PageRef(memberDocId: UUID(), sourcePageIndex: 0)
+    let block = EditableTextBlock(
+        pageRefID: pageRef.id,
+        text: "Original text",
+        bounds: CGRect(x: 72, y: 650, width: 160, height: 16),
+        lines: [],
+        fontName: "Helvetica",
+        fontSize: 8,
+        textColor: .documentText,
+        rotation: 0,
+        baseline: 650,
+        confidence: .high
+    )
+    var committed: InlineTextEditorOverlay.EditResult?
+    let overlay = InlineTextEditorOverlay(
+        frame: pdfView.bounds,
+        pdfView: pdfView,
+        page: page,
+        pageRef: pageRef,
+        block: block
+    ) { completion in
+        if case .commit(let edit) = completion {
+            committed = edit
+        }
+    }
+    pdfView.addSubview(overlay)
+    return InlineEditorFixture(pdfView: pdfView, overlay: overlay) {
+        committed
+    }
+}
+
+private func findSubview<T: NSView>(in root: NSView, matching predicate: (T) -> Bool) -> T? {
+    if let typed = root as? T, predicate(typed) {
+        return typed
+    }
+    for subview in root.subviews {
+        if let found: T = findSubview(in: subview, matching: predicate) {
+            return found
+        }
+    }
+    return nil
 }
 
 private func colorsApproximatelyEqual(_ lhs: NSColor?, _ rhs: NSColor, tolerance: CGFloat = 0.001) -> Bool {

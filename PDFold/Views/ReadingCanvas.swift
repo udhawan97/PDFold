@@ -178,6 +178,7 @@ struct PDFViewRepresentable: NSViewRepresentable {
         let click = NSClickGestureRecognizer(target: context.coordinator,
                                              action: #selector(Coordinator.handleClick(_:)))
         click.numberOfClicksRequired = 1
+        click.delegate = context.coordinator
         view.addGestureRecognizer(click)
 
         // Ink overlay
@@ -242,7 +243,7 @@ struct PDFViewRepresentable: NSViewRepresentable {
 
     // MARK: - Coordinator
 
-    final class Coordinator: NSObject, NSPopoverDelegate {
+    final class Coordinator: NSObject, NSPopoverDelegate, NSGestureRecognizerDelegate {
         var viewModel: WorkspaceViewModel
         weak var pdfView: PDFoldPDFView?
         let inkOverlay = InkOverlayView()
@@ -319,6 +320,12 @@ struct PDFViewRepresentable: NSViewRepresentable {
             default:
                 viewModel.selectedAnnotation = nil
             }
+        }
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: NSGestureRecognizer) -> Bool {
+            guard let pdfView else { return true }
+            let viewPoint = gestureRecognizer.location(in: pdfView)
+            return inlineEditor?.containsInteractivePoint(viewPoint) != true
         }
 
         private func editableTextSelection(at point: CGPoint, on page: PDFPage) -> PDFSelection? {
@@ -951,7 +958,7 @@ final class NoteEditorViewController: NSViewController {
 
 // MARK: - Inline PDF text editor
 
-final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
+final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDelegate {
     struct EditResult {
         var pageRef: PageRef
         var block: EditableTextBlock
@@ -979,7 +986,7 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
     private let resizeHandle = InlineResizeHandle()
     private let familyPopup = NSPopUpButton()
     private let sizeStepper = NSStepper()
-    private let sizeLabel = NSTextField(labelWithString: "")
+    private let sizeField = NSTextField(string: "")
     private let boldButton = NSButton(title: "B", target: nil, action: nil)
     private let italicButton = NSButton(title: "I", target: nil, action: nil)
     private let alignControl = NSSegmentedControl(labels: ["L", "C", "R"], trackingMode: .selectOne, target: nil, action: nil)
@@ -1062,6 +1069,24 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
             resizeHandle.frame.insetBy(dx: -6, dy: -6).contains(point)
     }
 
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard !isHidden, alphaValue > 0, bounds.contains(point) else { return nil }
+        return hitTestInteractiveSubview(toolbar, point: point, padding: 4) ??
+            hitTestInteractiveSubview(resizeHandle, point: point, padding: 6) ??
+            hitTestInteractiveSubview(textView, point: point, padding: 6)
+    }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+
+    private func hitTestInteractiveSubview(_ view: NSView, point: NSPoint, padding: CGFloat) -> NSView? {
+        guard !view.isHidden, view.alphaValue > 0 else { return nil }
+        let converted = view.convert(point, from: self)
+        guard view.bounds.insetBy(dx: -padding, dy: -padding).contains(converted) else { return nil }
+        return view.hitTest(point) ?? view
+    }
+
     override func viewWillMove(toWindow newWindow: NSWindow?) {
         super.viewWillMove(toWindow: newWindow)
         if newWindow == nil, !didFinish {
@@ -1138,17 +1163,26 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
         familyPopup.frame = CGRect(x: 8, y: 8, width: 142, height: 26)
         toolbar.addSubview(familyPopup)
 
-        sizeLabel.alignment = .center
-        sizeLabel.font = .systemFont(ofSize: 12, weight: .medium)
-        sizeLabel.frame = CGRect(x: 154, y: 12, width: 34, height: 18)
-        toolbar.addSubview(sizeLabel)
+        sizeField.alignment = .center
+        sizeField.font = .systemFont(ofSize: 12, weight: .medium)
+        sizeField.controlSize = .small
+        sizeField.bezelStyle = .roundedBezel
+        sizeField.isEditable = true
+        sizeField.isSelectable = true
+        sizeField.target = self
+        sizeField.action = #selector(commitSizeField(_:))
+        sizeField.delegate = self
+        sizeField.toolTip = "Font size"
+        sizeField.frame = CGRect(x: 154, y: 8, width: 42, height: 26)
+        toolbar.addSubview(sizeField)
 
         sizeStepper.minValue = 4
         sizeStepper.maxValue = 96
         sizeStepper.integerValue = Int(round(documentFontSize))
         sizeStepper.target = self
         sizeStepper.action = #selector(changeSize(_:))
-        sizeStepper.frame = CGRect(x: 190, y: 8, width: 18, height: 26)
+        sizeStepper.toolTip = "Font size"
+        sizeStepper.frame = CGRect(x: 200, y: 8, width: 20, height: 26)
         toolbar.addSubview(sizeStepper)
 
         boldButton.target = self
@@ -1157,7 +1191,7 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
         boldButton.bezelStyle = .rounded
         boldButton.font = .boldSystemFont(ofSize: 12)
         boldButton.state = editorFontTraits.contains(.boldFontMask) ? .on : .off
-        boldButton.frame = CGRect(x: 222, y: 8, width: 32, height: 26)
+        boldButton.frame = CGRect(x: 234, y: 8, width: 32, height: 26)
         toolbar.addSubview(boldButton)
 
         italicButton.target = self
@@ -1166,26 +1200,27 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
         italicButton.bezelStyle = .rounded
         italicButton.font = NSFontManager.shared.convert(NSFont.systemFont(ofSize: 12), toHaveTrait: .italicFontMask)
         italicButton.state = editorFontTraits.contains(.italicFontMask) ? .on : .off
-        italicButton.frame = CGRect(x: 258, y: 8, width: 32, height: 26)
+        italicButton.frame = CGRect(x: 270, y: 8, width: 32, height: 26)
         toolbar.addSubview(italicButton)
 
         alignControl.target = self
         alignControl.action = #selector(changeAlignment(_:))
         alignControl.selectedSegment = selectedAlignmentSegment()
-        alignControl.frame = CGRect(x: 302, y: 8, width: 82, height: 26)
+        alignControl.frame = CGRect(x: 314, y: 8, width: 82, height: 26)
         toolbar.addSubview(alignControl)
 
         let cancel = NSButton(title: "Cancel", target: self, action: #selector(cancelButton))
         cancel.bezelStyle = .rounded
-        cancel.frame = CGRect(x: 398, y: 8, width: 68, height: 26)
+        cancel.frame = CGRect(x: 410, y: 8, width: 68, height: 26)
         toolbar.addSubview(cancel)
 
         let done = NSButton(title: "Done", target: self, action: #selector(commitButton))
         done.bezelStyle = .rounded
         done.contentTintColor = .dsAccentNS
         done.keyEquivalent = "\r"
-        done.frame = CGRect(x: 472, y: 8, width: 62, height: 26)
+        done.frame = CGRect(x: 484, y: 8, width: 62, height: 26)
         toolbar.addSubview(done)
+        refreshSizeControls()
     }
 
     private func layoutEditor() {
@@ -1220,7 +1255,7 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
     }
 
     private func toolbarFrame(near editorRect: CGRect) -> CGRect {
-        let size = CGSize(width: 542, height: 42)
+        let size = CGSize(width: 554, height: 42)
         let x = min(max(editorRect.midX - size.width / 2, 8), max(8, bounds.width - size.width - 8))
         let aboveY = editorRect.maxY + 8
         let y = aboveY + size.height < bounds.height ? aboveY : max(8, editorRect.minY - size.height - 8)
@@ -1306,10 +1341,34 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
     }
 
     @objc private func changeSize(_ sender: NSStepper) {
-        documentFontSize = CGFloat(sender.integerValue)
+        setDocumentFontSize(CGFloat(sender.integerValue))
+        refocusEditor()
+    }
+
+    @objc private func commitSizeField(_ sender: NSTextField) {
+        guard commitSizeFieldValue() else { return }
+        refocusEditor()
+    }
+
+    func controlTextDidEndEditing(_ obj: Notification) {
+        guard obj.object as? NSTextField === sizeField else { return }
+        _ = commitSizeFieldValue()
+    }
+
+    private func commitSizeFieldValue() -> Bool {
+        guard let parsed = parsedFontSize(from: sizeField.stringValue) else {
+            refreshSizeControls()
+            return false
+        }
+        setDocumentFontSize(parsed)
+        return true
+    }
+
+    private func setDocumentFontSize(_ size: CGFloat) {
+        let clamped = min(max(size, CGFloat(sizeStepper.minValue)), CGFloat(sizeStepper.maxValue))
+        documentFontSize = clamped
         didChangeStyle = true
         applyFormatting()
-        refocusEditor()
     }
 
     @objc private func toggleBold() {
@@ -1353,7 +1412,7 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
     }
 
     private func applyFormatting() {
-        sizeLabel.stringValue = "\(Int(round(documentFontSize)))"
+        refreshSizeControls()
         let font = displayFont()
         textView.font = font
         textView.textColor = editorTextColor
@@ -1373,6 +1432,27 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
             textView.setSelectedRange(selectedRange)
         }
         resizeTextViewHeight()
+    }
+
+    private func refreshSizeControls() {
+        sizeField.stringValue = formattedFontSize(documentFontSize)
+        sizeStepper.integerValue = Int(round(documentFontSize))
+    }
+
+    private func parsedFontSize(from value: String) -> CGFloat? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let number = Double(trimmed.replacingOccurrences(of: ",", with: ".")),
+              number.isFinite else { return nil }
+        return CGFloat(number)
+    }
+
+    private func formattedFontSize(_ size: CGFloat) -> String {
+        let rounded = round(size)
+        if abs(size - rounded) < 0.05 {
+            return "\(Int(rounded))"
+        }
+        return String(format: "%.1f", Double(size))
     }
 
     @objc private func pdfViewScaleChanged(_ notification: Notification) {
@@ -1492,6 +1572,7 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate {
 
     @objc fileprivate func commitButton() {
         guard !didFinish, let pdfView, let page else { return }
+        _ = commitSizeFieldValue()
         if shouldCancelWithoutCommit {
             cancel()
             return
