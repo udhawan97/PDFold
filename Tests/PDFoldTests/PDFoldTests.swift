@@ -821,6 +821,30 @@ final class WorkspaceDocumentTests: XCTestCase {
         XCTAssertEqual(WorkspaceDocument.writableContentTypes, [.pdf])
     }
 
+    func testAppInfoPlistDoesNotAdvertiseWorkspaceSaveFormat() throws {
+        let plistURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("PDFold/Resources/Info.plist")
+        let plistData = try Data(contentsOf: plistURL)
+        let plist = try XCTUnwrap(
+            PropertyListSerialization.propertyList(from: plistData, options: [], format: nil) as? [String: Any]
+        )
+        let documentTypes = try XCTUnwrap(plist["CFBundleDocumentTypes"] as? [[String: Any]])
+        let exportedTypes = plist["UTExportedTypeDeclarations"] as? [[String: Any]] ?? []
+
+        XCTAssertFalse(
+            documentTypes.contains { type in
+                let name = type["CFBundleTypeName"] as? String
+                let extensions = type["CFBundleTypeExtensions"] as? [String] ?? []
+                return name?.localizedCaseInsensitiveContains("workspace") == true
+                    || extensions.contains("pdfoldproj")
+            }
+        )
+        XCTAssertTrue(exportedTypes.isEmpty)
+    }
+
     func testSnapshotUsesCurrentPDFDataProvider() throws {
         let memberID = UUID()
         let expectedPDFData = try makePDF(pageTexts: ["snapshot"]).dataRepresentation().unwrap()
