@@ -209,6 +209,7 @@ final class WorkspaceDocument: ReferenceFileDocument {
               let pdfData = exportedPDFData(from: snapshot) else {
             throw CocoaError(.fileWriteUnknown)
         }
+        PetBuddyHook.trigger(.save)
         return FileWrapper(regularFileWithContents: pdfData)
     }
 }

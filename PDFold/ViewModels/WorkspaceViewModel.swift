@@ -399,6 +399,7 @@ final class WorkspaceViewModel {
         originalMemberPDFData[member.id] = data
         memberSourceURLs[member.id] = url
         loadedPDFs.append((member, pdf))
+        PetBuddyHook.trigger(.addFile)
     }
 
     private func smokeValidatePDFData(_ data: Data?, password: String? = nil) {
@@ -597,6 +598,7 @@ final class WorkspaceViewModel {
             vm.removeTag(tag)
         }
         undoManager?.setActionName("Add Tag")
+        PetBuddyHook.trigger(.tag)
     }
 
     func removeTag(_ tag: String) {
@@ -620,6 +622,7 @@ final class WorkspaceViewModel {
             vm.removeComment(comment)
         }
         undoManager?.setActionName("Add Comment")
+        PetBuddyHook.trigger(.comment)
     }
 
     func removeComment(_ comment: WorkspaceComment) {
@@ -665,6 +668,7 @@ final class WorkspaceViewModel {
         var updated = document.workspace.comments[index]
         updated.tags.append(tag)
         replaceComment(at: index, with: updated, actionName: "Tag Comment")
+        PetBuddyHook.trigger(.tag)
     }
 
     func removeTag(_ tag: String, from comment: WorkspaceComment) {
@@ -973,6 +977,7 @@ final class WorkspaceViewModel {
             vm.restoreInlineTextEditSnapshot(previousSnapshot, actionName: "Edit PDF Text")
         }
         undoManager?.setActionName("Edit PDF Text")
+        PetBuddyHook.trigger(.edit)
         return true
     }
 
@@ -992,6 +997,7 @@ final class WorkspaceViewModel {
         if didAddAnnotation {
             markAnnotationsModified()
             undoManager?.setActionName("Highlight")
+            PetBuddyHook.trigger(.highlight)
         }
         return didAddAnnotation
     }
@@ -1009,6 +1015,7 @@ final class WorkspaceViewModel {
         markAnnotationsModified()
         undoManager?.registerUndo(withTarget: self) { _ in page.removeAnnotation(ann) }
         undoManager?.setActionName("Add Note")
+        PetBuddyHook.trigger(.note)
         return ann
     }
 
@@ -1103,6 +1110,7 @@ final class WorkspaceViewModel {
         markAnnotationsModified()
         undoManager?.registerUndo(withTarget: self) { _ in page.removeAnnotation(ann) }
         undoManager?.setActionName("Ink Stroke")
+        PetBuddyHook.trigger(.ink)
     }
 
     private func inkPath(_ path: NSBezierPath, offsetBy offset: CGSize) -> NSBezierPath {
@@ -1377,6 +1385,7 @@ final class WorkspaceViewModel {
             return nil
         }
         undoManager?.setActionName("Place Signature")
+        PetBuddyHook.trigger(.sign)
         return selectedAnnotation
     }
 
@@ -1644,6 +1653,7 @@ final class WorkspaceViewModel {
         if !results.isEmpty {
             searchResultIndex = 0
             jumpToSearchResult(0)
+            PetBuddyHook.trigger(.search)
         }
     }
 
@@ -1673,7 +1683,7 @@ final class WorkspaceViewModel {
     // MARK: - Export
 
     func exportWorkspace(as format: WorkspaceExportFormat) {
-        switch format {
+        let didExport = switch format {
         case .pdf:
             exportPlainPDF()
         case .word:
@@ -1687,17 +1697,26 @@ final class WorkspaceViewModel {
         case .png, .jpeg:
             exportPageImages(as: format)
         }
+        if didExport {
+            PetBuddyHook.trigger(.export)
+        }
     }
 
-    func exportPlainPDF() {
-        saveFlattenedPDF()
+    @discardableResult
+    func exportPlainPDF() -> Bool {
+        saveFlattenedPDF(to: nil, triggerPet: false)
     }
 
-    func saveFlattenedPDF(to url: URL? = nil) {
+    @discardableResult
+    func saveFlattenedPDF(to url: URL? = nil) -> Bool {
+        saveFlattenedPDF(to: url, triggerPet: true)
+    }
+
+    private func saveFlattenedPDF(to url: URL?, triggerPet: Bool) -> Bool {
         let snapshot = WorkspacePackage(workspace: document.workspace, memberPDFData: currentPDFData())
         guard let pdfData = document.exportedPDFData(from: snapshot) else {
             exportError = ExportError(message: "pdFold could not serialize the PDF for saving. Try exporting individual documents first.")
-            return
+            return false
         }
 
         let targetURL: URL
@@ -1715,65 +1734,71 @@ final class WorkspaceViewModel {
             panel.allowedContentTypes = [.pdf]
             panel.nameFieldStringValue = defaultName
             panel.title = "Export PDF"
-            guard panel.runModal() == .OK, let chosenURL = panel.url else { return }
+            guard panel.runModal() == .OK, let chosenURL = panel.url else { return false }
             targetURL = chosenURL
         }
 
         do {
             try pdfData.write(to: targetURL, options: .atomic)
+            if triggerPet {
+                PetBuddyHook.trigger(.save)
+            }
+            return true
         } catch {
             exportError = ExportError(message: "pdFold could not save the PDF: \(error.localizedDescription)")
+            return false
         }
     }
 
-    private func exportWordDocument() {
+    private func exportWordDocument() -> Bool {
         let attributed = attributedTextForDocumentExport()
         do {
             let data = try attributed.data(
                 from: NSRange(location: 0, length: attributed.length),
                 documentAttributes: [.documentType: NSAttributedString.DocumentType.officeOpenXML]
             )
-            saveData(data, as: .word)
+            return saveData(data, as: .word)
         } catch {
             exportError = ExportError(message: "pdFold could not create the Word export: \(error.localizedDescription)")
+            return false
         }
     }
 
-    private func exportPlainText() {
+    private func exportPlainText() -> Bool {
         guard let data = plainTextForDocumentExport().data(using: .utf8) else {
             exportError = ExportError(message: "pdFold could not encode the text export.")
-            return
+            return false
         }
-        saveData(data, as: .text)
+        return saveData(data, as: .text)
     }
 
-    private func exportMarkdown() {
+    private func exportMarkdown() -> Bool {
         guard let data = markdownForDocumentExport().data(using: .utf8) else {
             exportError = ExportError(message: "pdFold could not encode the Markdown export.")
-            return
+            return false
         }
-        saveData(data, as: .markdown)
+        return saveData(data, as: .markdown)
     }
 
-    private func exportHTML() {
+    private func exportHTML() -> Bool {
         let html = htmlForDocumentExport()
         guard let data = html.data(using: .utf8) else {
             exportError = ExportError(message: "pdFold could not encode the HTML export.")
-            return
+            return false
         }
-        saveData(data, as: .html)
+        return saveData(data, as: .html)
     }
 
-    private func exportPageImages(as format: WorkspaceExportFormat) {
+    private func exportPageImages(as format: WorkspaceExportFormat) -> Bool {
         let snapshot = WorkspacePackage(workspace: document.workspace, memberPDFData: currentPDFData())
         guard let exportData = document.exportedPDFData(from: snapshot),
               let exportDoc = PDFDocument(data: exportData) else {
             exportError = ExportError(message: "pdFold could not prepare pages for image export.")
-            return
+            return false
         }
         guard exportDoc.pageCount > 0 else {
             exportError = ExportError(message: "There are no pages to export.")
-            return
+            return false
         }
 
         let panel = NSSavePanel()
@@ -1781,7 +1806,7 @@ final class WorkspaceViewModel {
         panel.nameFieldStringValue = "\(safeFilename(document.workspace.title)) \(format.fileExtension.uppercased()) Pages"
         panel.title = "Export \(format.menuTitle)"
         panel.prompt = "Export"
-        guard panel.runModal() == .OK, let folderURL = panel.url else { return }
+        guard panel.runModal() == .OK, let folderURL = panel.url else { return false }
 
         do {
             try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
@@ -1793,23 +1818,27 @@ final class WorkspaceViewModel {
                 let filename = "page-\(String(format: "%03d", pageIndex + 1)).\(format.fileExtension)"
                 try data.write(to: folderURL.appendingPathComponent(filename), options: .atomic)
             }
+            return true
         } catch {
             exportError = ExportError(message: "pdFold could not export page images: \(error.localizedDescription)")
+            return false
         }
     }
 
-    private func saveData(_ data: Data, as format: WorkspaceExportFormat) {
+    private func saveData(_ data: Data, as format: WorkspaceExportFormat) -> Bool {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [format.contentType]
         panel.canCreateDirectories = true
         panel.nameFieldStringValue = "\(safeFilename(document.workspace.title)).\(format.fileExtension)"
         panel.title = "Export \(format.menuTitle)"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard panel.runModal() == .OK, let url = panel.url else { return false }
 
         do {
             try data.write(to: url, options: .atomic)
+            return true
         } catch {
             exportError = ExportError(message: "pdFold could not write the \(format.menuTitle) export: \(error.localizedDescription)")
+            return false
         }
     }
 
@@ -2208,6 +2237,7 @@ final class WorkspaceViewModel {
             vm.rebuild()
         }
         undoManager?.setActionName("Rotate Page")
+        PetBuddyHook.trigger(.rotate)
     }
 
     func deletePage(_ ref: PageRef) {
@@ -2236,6 +2266,7 @@ final class WorkspaceViewModel {
             vm.restore(snapshot)
         }
         undoManager?.setActionName("Delete Page")
+        PetBuddyHook.trigger(.delete)
     }
 
     @discardableResult
@@ -2289,6 +2320,7 @@ final class WorkspaceViewModel {
         if didAddAnnotation {
             markAnnotationsModified()
             undoManager?.setActionName(type == .underline ? "Underline" : "Strikeout")
+            PetBuddyHook.trigger(.highlight)
         }
         return didAddAnnotation
     }

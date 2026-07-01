@@ -2283,6 +2283,64 @@ private final class FlippingProcessingEngine: PDFProcessingEngine {
     }
 }
 
+final class PetBuddyTests: XCTestCase {
+    @MainActor
+    func testDisableHushAndEnableKeepFoldyQuietWhenHidden() {
+        let defaults = UserDefaults.standard
+        let oldEnabledValue = defaults.object(forKey: "petEnabled")
+        let oldTriggerCountValue = defaults.object(forKey: "petTriggerCount")
+        let buddy = PetBuddy.shared
+
+        defer {
+            buddy.hush()
+            buddy.lastShownAt = nil
+            buddy.lastLine = nil
+            buddy.lastFeedbackAt = nil
+            if let oldEnabledValue {
+                defaults.set(oldEnabledValue, forKey: "petEnabled")
+                buddy.isEnabled = defaults.bool(forKey: "petEnabled")
+            } else {
+                defaults.removeObject(forKey: "petEnabled")
+                buddy.isEnabled = true
+            }
+            if let oldTriggerCountValue {
+                defaults.set(oldTriggerCountValue, forKey: "petTriggerCount")
+                buddy.triggerCount = defaults.integer(forKey: "petTriggerCount")
+            } else {
+                defaults.removeObject(forKey: "petTriggerCount")
+                buddy.triggerCount = 0
+            }
+        }
+
+        buddy.enable()
+        buddy.hush()
+        buddy.lastShownAt = nil
+        buddy.lastLine = nil
+        buddy.lastFeedbackAt = nil
+        buddy.triggerCount = 0
+
+        buddy.trigger(.greeting)
+        XCTAssertTrue(buddy.isBubbleVisible)
+        XCTAssertNotNil(buddy.currentMessage)
+
+        buddy.hush()
+        XCTAssertFalse(buddy.isBubbleVisible)
+        XCTAssertNil(buddy.currentMessage)
+
+        buddy.disable()
+        XCTAssertFalse(buddy.isEnabled)
+        XCTAssertFalse(defaults.bool(forKey: "petEnabled"))
+
+        buddy.trigger(.highlight)
+        XCTAssertFalse(buddy.isBubbleVisible)
+        XCTAssertNil(buddy.currentMessage)
+
+        buddy.enable()
+        XCTAssertTrue(buddy.isEnabled)
+        XCTAssertTrue(defaults.bool(forKey: "petEnabled"))
+    }
+}
+
 private extension PDFDocument {
     var stringValue: String {
         (0..<pageCount)

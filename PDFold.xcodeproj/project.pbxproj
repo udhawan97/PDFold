@@ -38,6 +38,7 @@
 		7D86C0C61FC456E2CF865899 /* PDFEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 547E4E8F72DEE08FB7A66472 /* PDFEngine.swift */; };
 		8118B9E40222205B59BFEA95 /* MemberDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21406CD791971A026B6A285 /* MemberDocument.swift */; };
 		8A1F027988EBF4B20A3AD22F /* PDFiumProcessingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86F4A0911CD68D8A0B97F04D /* PDFiumProcessingEngine.swift */; };
+		8D41C22A6E0F4D78A44D8A12 /* PetBuddy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D41C2296E0F4D78A44D8A12 /* PetBuddy.swift */; };
 		976F39BDDA9E42A215D88353 /* WorkspaceDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04448B1CCE672C13D52392B1 /* WorkspaceDocument.swift */; };
 		97C573B73A6CC4FCA36ACFC6 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45D6F51A2DFB7D860374B43 /* SearchView.swift */; };
 		992E7D41EF241B9BF45BEE41 /* SigningIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F56167E666B891A9EF1A3E4D /* SigningIdentity.swift */; };
@@ -103,6 +104,7 @@
 		86F4A0911CD68D8A0B97F04D /* PDFiumProcessingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFiumProcessingEngine.swift; sourceTree = "<group>"; };
 		8E213E9A3C14771FC7E6B7F0 /* CERTIFICATE_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CERTIFICATE_GUIDE.md; sourceTree = "<group>"; };
 		8E86D307E71D34D752C46670 /* SigningVerificationHarness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SigningVerificationHarness.swift; sourceTree = "<group>"; };
+		8D41C2296E0F4D78A44D8A12 /* PetBuddy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetBuddy.swift; sourceTree = "<group>"; };
 		92C4739CB79025BE3763E623 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		9304378D6348FB81960551B5 /* PageRef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageRef.swift; sourceTree = "<group>"; };
 		93C213D7BF6D3264E18EB458 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -236,6 +238,14 @@
 			path = Timestamp;
 			sourceTree = "<group>";
 		};
+		8D41C2286E0F4D78A44D8A12 /* Pet */ = {
+			isa = PBXGroup;
+			children = (
+				8D41C2296E0F4D78A44D8A12 /* PetBuddy.swift */,
+			);
+			path = Pet;
+			sourceTree = "<group>";
+		};
 		A9C9270660C0B4EE924C6FDF /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -319,6 +329,7 @@
 				251337720A803B70BED2B379 /* Document */,
 				B9D0894FF9788FFAD369BDEC /* Engine */,
 				D8318BD5C43BC309E3D0A687 /* Models */,
+				8D41C2286E0F4D78A44D8A12 /* Pet */,
 				A9C9270660C0B4EE924C6FDF /* Resources */,
 				459121EE0ED2F942C7958E59 /* Signing */,
 				B041E6B0F5424A558C3F9601 /* ViewModels */,
@@ -492,6 +503,7 @@
 				5FE51300054CFB230513A859 /* PDFTextEditingModels.swift in Sources */,
 				8A1F027988EBF4B20A3AD22F /* PDFiumProcessingEngine.swift in Sources */,
 				C563657EBB4551503D42CD5F /* PDFoldApp.swift in Sources */,
+				8D41C22A6E0F4D78A44D8A12 /* PetBuddy.swift in Sources */,
 				33B4CD8F03E0BED3A3DD68C1 /* PKCS12SigningIdentityProvider.swift in Sources */,
 				B937492F5A9B6525FD516F03 /* PageRef.swift in Sources */,
 				B30400477B2629A199CAE75B /* PasswordPromptView.swift in Sources */,

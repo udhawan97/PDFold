@@ -57,6 +57,7 @@ struct ContentView: View {
         }
         .animation(.easeInOut(duration: 0.18), value: viewModel.memberDocuments.isEmpty)
         .tint(Color.dsAccent)
+        .overlay(alignment: .bottomTrailing) { PetOverlay().padding(18) }
         .onAppear { viewModel.undoManager = undoManager }
         .onChange(of: undoManager) { _, um in viewModel.undoManager = um }
         .popover(isPresented: $viewModel.isShowingSearch, arrowEdge: .top) {
@@ -114,28 +115,29 @@ struct ContentView: View {
             .keyboardShortcut("o", modifiers: .command)
         }
 
+        // Header navigation: keep document structure near the title.
+        ToolbarItem(placement: .navigation) {
+            Button { showTOC.toggle() } label: {
+                Label("Contents", systemImage: "list.bullet.rectangle.portrait")
+            }
+            .acceptsImportDrops(perform: handleDrop)
+            .help("Table of contents")
+        }
+
         // Center: annotation tools + color swatch
         ToolbarItem(placement: .principal) {
             AnnotationToolPicker(viewModel: viewModel)
                 .acceptsImportDrops(isTargeted: $isNavigationDropTargeted, showsHighlight: true, perform: handleDrop)
         }
 
-        // Trailing: navigation, document actions, view controls, help
+        // Trailing: search, document actions, view controls, help
         ToolbarItemGroup(placement: .primaryAction) {
-            Button { showTOC.toggle() } label: {
-                Label("Contents", systemImage: "list.bullet.rectangle.portrait")
-            }
-            .acceptsImportDrops(perform: handleDrop)
-            .help("Table of contents")
-
             Button { viewModel.isShowingSearch.toggle() } label: {
                 Label("Search", systemImage: "magnifyingglass")
             }
             .acceptsImportDrops(perform: handleDrop)
             .help("Search (⌘F)")
             .keyboardShortcut("f", modifiers: .command)
-
-            Divider()
 
             Menu {
                 ForEach(WorkspaceExportFormat.allCases) { format in
@@ -154,24 +156,11 @@ struct ContentView: View {
             .help("Export / Print (⌘⇧E)")
             .keyboardShortcut("e", modifiers: [.command, .shift])
 
-            Button {
-                viewModel.isShowingSignaturePalette.toggle()
-                viewModel.currentTool = .signature
-            } label: {
-                Label("Signature", systemImage: "signature")
-            }
-            .acceptsImportDrops(perform: handleDrop)
-            .help("Place signature")
-
-            Divider()
-
             Button { showInspector.toggle() } label: {
                 Label("Inspector", systemImage: "sidebar.right")
             }
             .acceptsImportDrops(perform: handleDrop)
             .help("Toggle inspector")
-
-            Divider()
 
             GuideButton(autoShow: true)
                 .acceptsImportDrops(perform: handleDrop)
@@ -238,32 +227,22 @@ private struct AnnotationToolPicker: View {
     @State private var hoveredTool: AnnotationTool?
     @Namespace private var selectionNamespace
 
-    // Grouped by behavior so related tools sit together: selection, then
-    // text markup (+ the eraser that undoes it), then free-form page content.
+    // Keep the highest-frequency creation tools up front, then selection,
+    // text markup (+ eraser), and free-form page content.
     private let toolGroups: [[AnnotationTool]] = [
+        [.editText, .signature],
         [.none],
         [.highlight, .underline, .strikeout, .eraser],
-        [.note, .ink, .editText]
+        [.note, .ink]
     ]
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 9) {
             ForEach(toolGroups.indices, id: \.self) { groupIndex in
-                if groupIndex > 0 {
-                    Divider()
-                        .frame(height: 22)
-                        .padding(.horizontal, 3)
-                }
-                ForEach(toolGroups[groupIndex]) { tool in
-                    toolButton(tool)
-                }
+                toolGroup(toolGroups[groupIndex], isPrimary: groupIndex == 0)
             }
 
             if viewModel.currentTool.isColorable {
-                Divider()
-                    .frame(height: 22)
-                    .padding(.horizontal, 3)
-                    .transition(.scale.combined(with: .opacity))
                 AnnotationColorButton(viewModel: viewModel)
                     .transition(.scale.combined(with: .opacity))
             }
@@ -280,13 +259,28 @@ private struct AnnotationToolPicker: View {
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: viewModel.currentTool)
     }
 
+    private func toolGroup(_ tools: [AnnotationTool], isPrimary: Bool) -> some View {
+        HStack(spacing: 4) {
+            ForEach(tools) { tool in
+                toolButton(tool)
+            }
+        }
+        .padding(.horizontal, isPrimary ? 3 : 0)
+        .background {
+            if isPrimary {
+                Capsule()
+                    .fill(Color.dsAccentSoft)
+            }
+        }
+    }
+
     @ViewBuilder
     private func toolButton(_ tool: AnnotationTool) -> some View {
         let isSelected = viewModel.currentTool == tool
         let isHovered = hoveredTool == tool
 
         Button {
-            viewModel.currentTool = tool
+            select(tool)
         } label: {
             ZStack {
                 if isSelected {
@@ -323,6 +317,13 @@ private struct AnnotationToolPicker: View {
         }
         .help(tool.helpText)
         .accessibilityLabel(tool.label)
+    }
+
+    private func select(_ tool: AnnotationTool) {
+        if tool == .signature {
+            viewModel.isShowingSignaturePalette.toggle()
+        }
+        viewModel.currentTool = tool
     }
 
     @ViewBuilder
