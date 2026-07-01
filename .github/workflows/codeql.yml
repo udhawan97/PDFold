@@ -44,9 +44,11 @@ jobs:
             -project PDFold.xcodeproj \
             -scheme PDFold \
             -configuration Debug \
-            -destination 'generic/platform=macOS' \
+            -destination 'platform=macOS,arch=arm64' \
             -derivedDataPath "$RUNNER_TEMP/PDFoldDerivedData" \
             CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=YES \
+            ARCHS=arm64 \
             build
 
       - name: Perform CodeQL analysis
