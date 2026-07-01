@@ -22,7 +22,10 @@ enum PDFEditedPageRenderer {
         page.draw(with: .mediaBox, to: context)
 
         for operation in operations {
-            drawErasePatch(for: operation.sourceBounds, on: page, in: context)
+            let eraseBounds = operation.sourceLineBounds.isEmpty ? [operation.sourceBounds] : operation.sourceLineBounds
+            for sourceBounds in eraseBounds {
+                drawErasePatch(for: sourceBounds, on: page, in: context)
+            }
         }
         for operation in operations {
             drawReplacement(operation, in: context)
@@ -60,19 +63,22 @@ enum PDFEditedPageRenderer {
     static func measuredBounds(for operation: PDFTextEditOperation) -> CGRect {
         let layout = ReplacementTextLayout(operation: operation)
 
-        // Word-wrap can't break a single unbreakable run (e.g. one long word), so a
-        // replacement wider than the current box would otherwise get silently clipped by
-        // the CTFrame below instead of wrapping. Grow the width to fit one line of the
-        // text first (capped so it can't run off an average page), then measure height
-        // against that final width. This is a safety net — the live editor already keeps
-        // its box wide enough as the user types, so this mainly matters for edits that
-        // arrive with a stale/undersized box.
+        // Word-wrap can't break every unbreakable run, so an undersized stale box may
+        // clip. Auto-growth is allowed only inside the detected column. A manual width
+        // choice is already the user's wrap policy, so keep it exactly.
         let unwrapped = layout.suggestedSize(constrainedTo: CGSize(width: 10_000, height: 10_000))
-        let maxWidth: CGFloat = 620
-        let width = min(max(operation.editedBounds.width, min(ceil(unwrapped.width) + 6, maxWidth)), maxWidth)
+        let maxWidth = maximumTextWidth(for: operation)
+        let width: CGFloat
+        if operation.didManuallyResizeWidth {
+            width = max(1, operation.editedBounds.width)
+        } else {
+            width = min(max(operation.editedBounds.width, min(ceil(unwrapped.width) + 6, maxWidth)), maxWidth)
+        }
 
         let measured = layout.suggestedSize(constrainedTo: CGSize(width: width, height: 10_000))
-        let height = max(operation.editedBounds.height, ceil(measured.height) + 4)
+        let height = operation.didManuallyResizeHeight
+            ? max(1, operation.editedBounds.height)
+            : max(operation.editedBounds.height, ceil(measured.height) + 4)
 
         // Anchor to the box's TOP edge, matching the live inline editor — which grows
         // downward from a fixed top as text wraps (InlineTextEditorOverlay.resizeTextViewHeight).
@@ -85,6 +91,14 @@ enum PDFEditedPageRenderer {
         bounds.size.height = height
         bounds.origin.y = topY - height
         return bounds
+    }
+
+    private static func maximumTextWidth(for operation: PDFTextEditOperation) -> CGFloat {
+        guard let columnBounds = operation.columnBounds?.standardized,
+              columnBounds.width > 0 else {
+            return 620
+        }
+        return max(24, columnBounds.maxX - operation.editedBounds.minX)
     }
 
     private static func sampledBackgroundColor(near sourceBounds: CGRect, on page: PDFPage) -> CGColor? {

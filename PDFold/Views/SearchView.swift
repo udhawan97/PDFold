@@ -83,19 +83,21 @@ struct SearchView: View {
                 .padding(.dsXL)
                 .frame(maxWidth: .infinity)
             } else if !viewModel.searchResults.isEmpty {
-                List(viewModel.searchResults.indices, id: \.self) { i in
+                let rows = Array(viewModel.searchResults.enumerated())
+                List(rows, id: \.offset) { i, result in
                     SearchResultRow(
-                        result: viewModel.searchResults[i],
+                        result: result,
                         isActive: i == viewModel.searchResultIndex
                     )
                     .listRowBackground(
                         i == viewModel.searchResultIndex ? Color.dsAccentSoft : Color.clear
                     )
                     .onTapGesture {
+                        guard viewModel.searchResults.indices.contains(i) else { return }
                         viewModel.searchResultIndex = i
                         NotificationCenter.default.post(
                             name: .pdfoldJumpToSelection,
-                            object: viewModel.searchResults[i]
+                            object: result
                         )
                     }
                 }

@@ -372,6 +372,9 @@ struct PDFViewRepresentable: NSViewRepresentable {
             popover.contentViewController = vc
             popover.behavior = .transient
             popover.delegate = self
+            vc.closeHandler = { [weak popover] in
+                popover?.close()
+            }
             notePopover = popover
             popover.show(relativeTo: rect, of: view, preferredEdge: .maxY)
         }
@@ -413,7 +416,10 @@ struct PDFViewRepresentable: NSViewRepresentable {
                         fontName: edit.fontName,
                         fontSize: edit.fontSize,
                         textColor: edit.textColor,
-                        alignment: edit.alignment
+                        alignment: edit.alignment,
+                        didManuallyReposition: edit.didManuallyReposition,
+                        didManuallyResizeWidth: edit.didManuallyResizeWidth,
+                        didManuallyResizeHeight: edit.didManuallyResizeHeight
                     )
                     if didApply {
                         let newDoc = viewModel.combinedPDF
@@ -540,6 +546,7 @@ final class NoteEditorViewController: NSViewController {
     private let annotation: PDFAnnotation
     private let statusHandler: (String, Bool) -> Void
     private let changeHandler: () -> Void
+    var closeHandler: (() -> Void)?
     private weak var textView: NSTextView?
     private weak var scrollView: NSScrollView?
     private weak var sizeLabel: NSTextField?
@@ -689,12 +696,20 @@ final class NoteEditorViewController: NSViewController {
     @objc private func commit() {
         guard commitChanges() else { return }
         didCommit = true
-        dismiss(nil)
+        closeEditor()
     }
 
     @objc private func cancel() {
         cancelChanges()
-        dismiss(nil)
+        closeEditor()
+    }
+
+    private func closeEditor() {
+        if let closeHandler {
+            closeHandler()
+        } else {
+            dismiss(nil)
+        }
     }
 
     private func commitChanges() -> Bool {
@@ -963,7 +978,7 @@ final class NoteEditorViewController: NSViewController {
 
 // MARK: - Inline PDF text editor
 
-final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDelegate {
+    final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDelegate {
     struct EditResult {
         var pageRef: PageRef
         var block: EditableTextBlock
@@ -973,6 +988,9 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDele
         var fontSize: CGFloat
         var textColor: NSColor
         var alignment: NSTextAlignment
+        var didManuallyReposition: Bool
+        var didManuallyResizeWidth: Bool
+        var didManuallyResizeHeight: Bool
     }
 
     enum Completion {
@@ -987,7 +1005,7 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDele
     private let completion: (Completion) -> Void
     private let patchView = NSView()
     private let toolbar = NSView()
-    private let textView = NSTextView()
+    private let textView = InlineEditableTextView()
     private let resizeHandle = InlineResizeHandle()
     private let familyPopup = NSPopUpButton()
     private let sizeStepper = NSStepper()
@@ -1002,8 +1020,12 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDele
     private var editorAlignment: NSTextAlignment = .left
     private var didFinish = false
     private var editorTopY: CGFloat = 0
+    private var manualEditorPageOrigin: CGPoint?
     private var didManuallyResizeWidth = false
+    private var didManuallyResizeHeight = false
+    private var didManuallyReposition = false
     private var manualEditorPageWidth: CGFloat?
+    private var manualEditorPageHeight: CGFloat?
     private var didChangeStyle = false
     private let originalText: String
     private let originalFontFamily: String
@@ -1129,8 +1151,12 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDele
         textView.layer?.cornerRadius = 2
         addSubview(textView)
 
-        resizeHandle.onDrag = { [weak self] deltaX in
-            self?.resizeEditor(by: deltaX)
+        textView.onMoveDrag = { [weak self] delta in
+            self?.moveEditor(by: delta)
+        }
+
+        resizeHandle.onDrag = { [weak self] delta in
+            self?.resizeEditor(by: delta)
         }
         addSubview(resizeHandle)
 
@@ -1230,7 +1256,18 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDele
 
     private func layoutEditor() {
         guard let pdfView, let page else { return }
-        let sourceRect = pdfView.convert(block.bounds, from: page)
+        let originalSourceRect = pdfView.convert(block.bounds, from: page)
+        var editorPageBounds = block.bounds
+        if let manualEditorPageOrigin {
+            editorPageBounds.origin = manualEditorPageOrigin
+        }
+        if let manualEditorPageWidth {
+            editorPageBounds.size.width = manualEditorPageWidth
+        }
+        if let manualEditorPageHeight {
+            editorPageBounds.size.height = manualEditorPageHeight
+        }
+        let sourceRect = pdfView.convert(editorPageBounds, from: page)
         let minWidth: CGFloat = block.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 180 : 156
         let editorWidth: CGFloat
         if let manualEditorPageWidth {
@@ -1242,16 +1279,19 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDele
             )
             editorWidth = max(minWidth, pdfView.convert(manualPageRect, from: page).standardized.width)
         } else {
-            editorWidth = max(minWidth, sourceRect.width)
+            editorWidth = min(max(minWidth, sourceRect.width), columnConstrainedWidth(fromX: sourceRect.minX))
         }
+        let editorHeight = didManuallyResizeHeight
+            ? max(1, sourceRect.height)
+            : max(sourceRect.height + 6, displayFontSize * 1.5)
         let editorRect = CGRect(
             x: sourceRect.minX,
             y: sourceRect.minY,
             width: editorWidth,
-            height: max(sourceRect.height + 6, displayFontSize * 1.5)
+            height: editorHeight
         )
         editorTopY = editorRect.maxY
-        patchView.frame = sourceRect.insetBy(dx: -2, dy: -2)
+        patchView.frame = originalSourceRect.insetBy(dx: -2, dy: -2)
         textView.frame = editorRect
         updateTextContainerWidth()
         toolbar.frame = toolbarFrame(near: editorRect)
@@ -1275,7 +1315,11 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDele
         let used = layoutManager.usedRect(for: textContainer)
         var frame = textView.frame
         let minimumHeight = max(24, ceil(displayFontSize * 1.55))
-        frame.size.height = max(minimumHeight, ceil(used.height + textView.textContainerInset.height * 2 + 4))
+        if didManuallyResizeHeight {
+            frame.size.height = max(minimumHeight, frame.height)
+        } else {
+            frame.size.height = max(minimumHeight, ceil(used.height + textView.textContainerInset.height * 2 + 4))
+        }
         frame.origin.y = editorTopY - frame.height
         textView.frame = frame
         toolbar.frame = toolbarFrame(near: frame)
@@ -1287,14 +1331,12 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDele
     /// box still sized for the original text. No-ops once the user has manually dragged
     /// the resize handle, so an explicit width choice is always respected.
     private func autoFitWidthIfNeeded() {
-        guard !didManuallyResizeWidth, let pdfView, let page else { return }
+        guard !didManuallyResizeWidth else { return }
         let font = textView.font ?? displayFont()
         let text = textView.string.isEmpty ? " " : textView.string
         let desired = fittingTextViewWidth(for: text, font: font, minimumWidth: visualMinimumEditorWidth)
 
-        let pageViewBounds = pdfView.convert(page.bounds(for: .cropBox), from: page).standardized
-        let maxAvailable = max(120, pageViewBounds.maxX - textView.frame.minX - 12)
-        let maxWidth = min(620, maxAvailable)
+        let maxWidth = columnConstrainedWidth(fromX: textView.frame.minX)
         let minWidth = visualMinimumEditorWidth
         let newWidth = min(max(minWidth, desired), maxWidth)
 
@@ -1322,14 +1364,47 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDele
         return max(minimumWidth, ceil(unwrapped.width) + textView.textContainerInset.width * 2 + 6)
     }
 
-    private func resizeEditor(by deltaX: CGFloat) {
-        didManuallyResizeWidth = true
+    private func columnConstrainedWidth(fromX minX: CGFloat) -> CGFloat {
+        guard let pdfView, let page else { return 620 }
+        let pageViewBounds = pdfView.convert(page.bounds(for: .cropBox), from: page).standardized
+        let columnMaxX: CGFloat
+        if let columnBounds = block.columnBounds {
+            columnMaxX = pdfView.convert(columnBounds, from: page).standardized.maxX
+        } else {
+            columnMaxX = pageViewBounds.maxX
+        }
+        return max(48, min(620, columnMaxX - minX - 12))
+    }
+
+    private func moveEditor(by delta: CGPoint) {
+        guard delta.x.isFinite, delta.y.isFinite else { return }
+        didManuallyReposition = true
         var frame = textView.frame
-        frame.size.width = max(48, frame.width + deltaX)
+        frame.origin.x += delta.x
+        frame.origin.y += delta.y
+        textView.frame = frame
+        editorTopY = frame.maxY
+        toolbar.frame = toolbarFrame(near: frame)
+        resizeHandle.frame = CGRect(x: frame.maxX - 5, y: frame.minY - 5, width: 10, height: 10)
+        if let pdfView, let page {
+            manualEditorPageOrigin = pdfView.convert(convert(frame, to: pdfView), to: page).standardized.origin
+        }
+    }
+
+    private func resizeEditor(by delta: CGPoint) {
+        didManuallyResizeWidth = true
+        didManuallyResizeHeight = true
+        var frame = textView.frame
+        frame.size.width = max(48, frame.width + delta.x)
+        frame.size.height = max(max(24, ceil(displayFontSize * 1.55)), frame.height - delta.y)
+        frame.origin.y = editorTopY - frame.height
         textView.frame = frame
         updateTextContainerWidth()
         if let pdfView, let page {
-            manualEditorPageWidth = pdfView.convert(convert(frame, to: pdfView), to: page).standardized.width
+            let pageFrame = pdfView.convert(convert(frame, to: pdfView), to: page).standardized
+            manualEditorPageOrigin = pageFrame.origin
+            manualEditorPageWidth = pageFrame.width
+            manualEditorPageHeight = pageFrame.height
         }
         resizeTextViewHeight()
     }
@@ -1615,7 +1690,10 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDele
             fontName: documentFont().fontName,
             fontSize: documentFontSize,
             textColor: editorTextColor,
-            alignment: editorAlignment
+            alignment: editorAlignment,
+            didManuallyReposition: didManuallyReposition,
+            didManuallyResizeWidth: didManuallyResizeWidth,
+            didManuallyResizeHeight: didManuallyResizeHeight
         )
         removeFromSuperview()
         completion(.commit(result))
@@ -1629,6 +1707,9 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDele
             abs(documentFontSize - originalFontSize) < 0.01 &&
             editorFontTraits == originalFontTraits &&
             editorAlignment == originalAlignment &&
+            !didManuallyReposition &&
+            !didManuallyResizeWidth &&
+            !didManuallyResizeHeight &&
             !didChangeStyle
     }
 
@@ -1637,8 +1718,53 @@ final class InlineTextEditorOverlay: NSView, NSTextViewDelegate, NSTextFieldDele
     }
 }
 
+final class InlineEditableTextView: NSTextView {
+    var onMoveDrag: ((CGPoint) -> Void)?
+    private var isMoving = false
+    private var lastPoint: CGPoint?
+
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        addCursorRect(CGRect(x: 0, y: bounds.height - 8, width: bounds.width, height: 8), cursor: .openHand)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        if point.y >= bounds.height - 8 {
+            isMoving = true
+            lastPoint = superview?.convert(event.locationInWindow, from: nil)
+            NSCursor.closedHand.set()
+            return
+        }
+        super.mouseDown(with: event)
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard isMoving else {
+            super.mouseDragged(with: event)
+            return
+        }
+        guard let parent = superview else { return }
+        let point = parent.convert(event.locationInWindow, from: nil)
+        if let lastPoint {
+            onMoveDrag?(CGPoint(x: point.x - lastPoint.x, y: point.y - lastPoint.y))
+        }
+        self.lastPoint = point
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        if isMoving {
+            isMoving = false
+            lastPoint = nil
+            NSCursor.arrow.set()
+            return
+        }
+        super.mouseUp(with: event)
+    }
+}
+
 final class InlineResizeHandle: NSView {
-    var onDrag: ((CGFloat) -> Void)?
+    var onDrag: ((CGPoint) -> Void)?
     private var lastPoint: CGPoint?
 
     override init(frame frameRect: NSRect) {
@@ -1651,17 +1777,18 @@ final class InlineResizeHandle: NSView {
     required init?(coder: NSCoder) { nil }
 
     override func resetCursorRects() {
-        addCursorRect(bounds, cursor: .resizeLeftRight)
+        addCursorRect(bounds, cursor: .crosshair)
     }
 
     override func mouseDown(with event: NSEvent) {
-        lastPoint = convert(event.locationInWindow, from: nil)
+        lastPoint = superview?.convert(event.locationInWindow, from: nil)
     }
 
     override func mouseDragged(with event: NSEvent) {
-        let point = convert(event.locationInWindow, from: nil)
+        guard let parent = superview else { return }
+        let point = parent.convert(event.locationInWindow, from: nil)
         if let lastPoint {
-            onDrag?(point.x - lastPoint.x)
+            onDrag?(CGPoint(x: point.x - lastPoint.x, y: point.y - lastPoint.y))
         }
         self.lastPoint = point
     }

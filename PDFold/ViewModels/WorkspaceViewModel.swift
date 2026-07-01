@@ -639,6 +639,7 @@ final class WorkspaceViewModel {
                 text: existingOp.replacementText,
                 bounds: existingOp.editedBounds,
                 lines: [],
+                columnBounds: existingOp.columnBounds,
                 fontName: existingOp.fontName,
                 fontSize: existingOp.fontSize,
                 textColor: existingOp.textColor,
@@ -681,6 +682,7 @@ final class WorkspaceViewModel {
             text: "",
             bounds: bounds,
             lines: [],
+            columnBounds: pageBounds.insetBy(dx: 12, dy: 12),
             fontName: "Helvetica",
             fontSize: 14,
             textColor: .documentText,
@@ -699,7 +701,10 @@ final class WorkspaceViewModel {
         fontName: String,
         fontSize: CGFloat,
         textColor: NSColor,
-        alignment: NSTextAlignment
+        alignment: NSTextAlignment,
+        didManuallyReposition: Bool = false,
+        didManuallyResizeWidth: Bool = false,
+        didManuallyResizeHeight: Bool = false
     ) -> Bool {
         guard let lookup = memberPDF(for: pageRef),
               let localIdx = localIndex(ref: pageRef, memberIndex: lookup.documentIndex),
@@ -723,12 +728,17 @@ final class WorkspaceViewModel {
             pageRefID: pageRef.id,
             sourceBlockID: sourceBlock.id,
             sourceBounds: sourceBlock.bounds,
+            sourceLineBounds: sourceBlock.lines.map(\.bounds),
             editedBounds: editedBounds,
+            columnBounds: sourceBlock.columnBounds,
             replacementText: replacementText,
             fontName: fontName,
             fontSize: fontSize,
             textColor: CodableColor(nsColor: textColor),
-            alignment: CodableTextAlignment(alignment)
+            alignment: CodableTextAlignment(alignment),
+            didManuallyReposition: didManuallyReposition,
+            didManuallyResizeWidth: didManuallyResizeWidth,
+            didManuallyResizeHeight: didManuallyResizeHeight
         )
         // When updating an existing op (same sourceBlockID), preserve the original
         // sourceBounds so erase targeting and edit identity remain tied to the
@@ -736,6 +746,11 @@ final class WorkspaceViewModel {
         if let stateIndex = document.workspace.pageEditStates.firstIndex(where: { $0.pageRefID == pageRef.id }),
            let existingOp = document.workspace.pageEditStates[stateIndex].operations.first(where: { $0.sourceBlockID == sourceBlock.id }) {
             operation.sourceBounds = existingOp.sourceBounds
+            operation.sourceLineBounds = existingOp.sourceLineBounds
+            operation.columnBounds = operation.columnBounds ?? existingOp.columnBounds
+            operation.didManuallyReposition = operation.didManuallyReposition || existingOp.didManuallyReposition
+            operation.didManuallyResizeWidth = operation.didManuallyResizeWidth || existingOp.didManuallyResizeWidth
+            operation.didManuallyResizeHeight = operation.didManuallyResizeHeight || existingOp.didManuallyResizeHeight
         }
         // The live editor has already committed its page-space box. Keep that geometry
         // intact, then let measuredBounds expand only as needed for longer text.

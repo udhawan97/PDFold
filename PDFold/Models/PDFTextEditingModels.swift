@@ -33,6 +33,7 @@ struct EditableTextBlock: Codable, Identifiable, Equatable {
     var text: String
     var bounds: CGRect
     var lines: [PDFTextLine]
+    var columnBounds: CGRect? = nil
     var fontName: String
     var fontSize: CGFloat
     var textColor: CodableColor
@@ -47,14 +48,85 @@ struct PDFTextEditOperation: Codable, Identifiable, Equatable {
     var pageRefID: UUID
     var sourceBlockID: UUID
     var sourceBounds: CGRect
+    var sourceLineBounds: [CGRect] = []
     var editedBounds: CGRect
+    var columnBounds: CGRect? = nil
     var replacementText: String
     var fontName: String
     var fontSize: CGFloat
     var textColor: CodableColor
     var alignment: CodableTextAlignment
+    var didManuallyReposition: Bool = false
+    var didManuallyResizeWidth: Bool = false
+    var didManuallyResizeHeight: Bool = false
     var createdAt: Date = Date()
     var modifiedAt: Date = Date()
+
+    enum CodingKeys: String, CodingKey {
+        case id, pageRefID, sourceBlockID, sourceBounds, sourceLineBounds, editedBounds, columnBounds
+        case replacementText, fontName, fontSize, textColor, alignment
+        case didManuallyReposition, didManuallyResizeWidth, didManuallyResizeHeight
+        case createdAt, modifiedAt
+    }
+
+    init(
+        id: UUID = UUID(),
+        pageRefID: UUID,
+        sourceBlockID: UUID,
+        sourceBounds: CGRect,
+        sourceLineBounds: [CGRect] = [],
+        editedBounds: CGRect,
+        columnBounds: CGRect? = nil,
+        replacementText: String,
+        fontName: String,
+        fontSize: CGFloat,
+        textColor: CodableColor,
+        alignment: CodableTextAlignment,
+        didManuallyReposition: Bool = false,
+        didManuallyResizeWidth: Bool = false,
+        didManuallyResizeHeight: Bool = false,
+        createdAt: Date = Date(),
+        modifiedAt: Date = Date()
+    ) {
+        self.id = id
+        self.pageRefID = pageRefID
+        self.sourceBlockID = sourceBlockID
+        self.sourceBounds = sourceBounds
+        self.sourceLineBounds = sourceLineBounds
+        self.editedBounds = editedBounds
+        self.columnBounds = columnBounds
+        self.replacementText = replacementText
+        self.fontName = fontName
+        self.fontSize = fontSize
+        self.textColor = textColor
+        self.alignment = alignment
+        self.didManuallyReposition = didManuallyReposition
+        self.didManuallyResizeWidth = didManuallyResizeWidth
+        self.didManuallyResizeHeight = didManuallyResizeHeight
+        self.createdAt = createdAt
+        self.modifiedAt = modifiedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        pageRefID = try c.decode(UUID.self, forKey: .pageRefID)
+        sourceBlockID = try c.decode(UUID.self, forKey: .sourceBlockID)
+        sourceBounds = try c.decode(CGRect.self, forKey: .sourceBounds)
+        sourceLineBounds = try c.decodeIfPresent([CGRect].self, forKey: .sourceLineBounds) ?? []
+        editedBounds = try c.decode(CGRect.self, forKey: .editedBounds)
+        columnBounds = try c.decodeIfPresent(CGRect.self, forKey: .columnBounds)
+        replacementText = try c.decode(String.self, forKey: .replacementText)
+        fontName = try c.decode(String.self, forKey: .fontName)
+        fontSize = try c.decode(CGFloat.self, forKey: .fontSize)
+        textColor = try c.decode(CodableColor.self, forKey: .textColor)
+        alignment = try c.decode(CodableTextAlignment.self, forKey: .alignment)
+        didManuallyReposition = try c.decodeIfPresent(Bool.self, forKey: .didManuallyReposition) ?? false
+        didManuallyResizeWidth = try c.decodeIfPresent(Bool.self, forKey: .didManuallyResizeWidth) ?? false
+        didManuallyResizeHeight = try c.decodeIfPresent(Bool.self, forKey: .didManuallyResizeHeight) ?? false
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        modifiedAt = try c.decodeIfPresent(Date.self, forKey: .modifiedAt) ?? createdAt
+    }
 }
 
 struct PageEditState: Codable, Identifiable, Equatable {
@@ -68,6 +140,7 @@ struct PDFTextEditSession: Equatable {
     var block: EditableTextBlock
     var draftText: String
     var draftBounds: CGRect
+    var columnBounds: CGRect? = nil
     var fontName: String
     var fontSize: CGFloat
     var textColor: CodableColor

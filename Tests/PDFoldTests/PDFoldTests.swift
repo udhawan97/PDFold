@@ -115,6 +115,67 @@ final class PDFTextEditingRedesignTests: XCTestCase {
         XCTAssertNotEqual(block.confidence, .low)
     }
 
+    func testPDFTextAnalysisMergesWrappedBulletIntoOneEditableBlock() throws {
+        let pdf = makeWrappedBulletPDF()
+        let data = try pdf.dataRepresentation().unwrap()
+        let engine = PDFTextAnalysisEngine()
+        let page = try XCTUnwrap(pdf.page(at: 0))
+
+        let analysis = engine.analyze(data: data, pageIndex: 0, pageRefID: UUID(), fallbackPage: page)
+        let block = try XCTUnwrap(analysis.blocks.first { $0.text.contains("Partnered with") })
+
+        XCTAssertGreaterThanOrEqual(block.lines.count, 2)
+        XCTAssertTrue(block.text.contains("trailing punctuation"))
+        XCTAssertNotNil(block.columnBounds)
+        XCTAssertGreaterThan(block.bounds.height, block.lines.first?.bounds.height ?? 0)
+    }
+
+    func testPDFTextAnalysisPropagatesColumnCeilingForTwoColumnLayout() throws {
+        let pdf = makeTwoColumnPDF()
+        let data = try pdf.dataRepresentation().unwrap()
+        let engine = PDFTextAnalysisEngine()
+        let page = try XCTUnwrap(pdf.page(at: 0))
+
+        let analysis = engine.analyze(data: data, pageIndex: 0, pageRefID: UUID(), fallbackPage: page)
+        let leftBlock = try XCTUnwrap(analysis.blocks.first { $0.text.contains("Main column") })
+        let rightBlock = try XCTUnwrap(analysis.blocks.first { $0.text.contains("Sidebar") })
+        let leftColumn = try XCTUnwrap(leftBlock.columnBounds)
+
+        XCTAssertLessThan(leftColumn.maxX, rightBlock.bounds.minX)
+    }
+
+    func testPDFTextAnalysisMergesWrappedLinesWithinInterleavedColumns() throws {
+        let pdf = makeTwoColumnWrappedPDF()
+        let data = try pdf.dataRepresentation().unwrap()
+        let engine = PDFTextAnalysisEngine()
+        let page = try XCTUnwrap(pdf.page(at: 0))
+
+        let analysis = engine.analyze(data: data, pageIndex: 0, pageRefID: UUID(), fallbackPage: page)
+        let leftBlock = try XCTUnwrap(analysis.blocks.first { $0.text.contains("Left column") })
+        let rightBlock = try XCTUnwrap(analysis.blocks.first { $0.text.contains("Right column") })
+
+        XCTAssertGreaterThanOrEqual(leftBlock.lines.count, 2)
+        XCTAssertGreaterThanOrEqual(rightBlock.lines.count, 2)
+        XCTAssertTrue(leftBlock.text.contains("continuation"))
+        XCTAssertTrue(rightBlock.text.contains("continuation"))
+    }
+
+    func testPDFTextAnalysisDoesNotMergeConsecutiveBulletItems() throws {
+        let pdf = makeConsecutiveBulletsPDF()
+        let data = try pdf.dataRepresentation().unwrap()
+        let engine = PDFTextAnalysisEngine()
+        let page = try XCTUnwrap(pdf.page(at: 0))
+
+        let analysis = engine.analyze(data: data, pageIndex: 0, pageRefID: UUID(), fallbackPage: page)
+        let first = analysis.blocks.filter { $0.text.contains("First item") }
+        let second = analysis.blocks.filter { $0.text.contains("Second item") }
+
+        XCTAssertEqual(first.count, 1)
+        XCTAssertEqual(second.count, 1)
+        XCTAssertNotEqual(first.first?.id, second.first?.id)
+        XCTAssertFalse(first.first?.text.contains("Second item") ?? true)
+    }
+
     func testPDFTextAnalysisUsesVisibleFontSizeForScaledContentStreams() throws {
         let nominalFontSize: CGFloat = 24
         let pdf = makeScaledTextPDF(text: "Scaled inline text", fontSize: nominalFontSize, scale: 0.5)
@@ -179,6 +240,33 @@ final class PDFTextEditingRedesignTests: XCTestCase {
 
         XCTAssertEqual(decoded.pageEditStates.first?.pageRefID, pageID)
         XCTAssertEqual(decoded.pageEditStates.first?.operations.first?.replacementText, "Edited")
+    }
+
+    func testLegacyPageEditOperationDecodesWithDefaultGeometryMetadata() throws {
+        let pageID = UUID()
+        let blockID = UUID()
+        let json = """
+        {
+          "pageRefID": "\(pageID.uuidString)",
+          "sourceBlockID": "\(blockID.uuidString)",
+          "sourceBounds": [[1,2],[30,12]],
+          "editedBounds": [[1,2],[42,18]],
+          "replacementText": "Edited",
+          "fontName": "Helvetica",
+          "fontSize": 14,
+          "textColor": {"red":0,"green":0,"blue":0,"alpha":1},
+          "alignment": "left"
+        }
+        """
+
+        let decoded = try JSONDecoder().decode(PDFTextEditOperation.self, from: Data(json.utf8))
+
+        XCTAssertEqual(decoded.pageRefID, pageID)
+        XCTAssertTrue(decoded.sourceLineBounds.isEmpty)
+        XCTAssertNil(decoded.columnBounds)
+        XCTAssertFalse(decoded.didManuallyReposition)
+        XCTAssertFalse(decoded.didManuallyResizeWidth)
+        XCTAssertFalse(decoded.didManuallyResizeHeight)
     }
 
     func testInlineTextEditRegeneratesTouchedPageAndStoresOperation() throws {
@@ -335,6 +423,50 @@ final class PDFTextEditingRedesignTests: XCTestCase {
         XCTAssertGreaterThan(measured.height, originalBounds.height, "expected the box to grow for wrapped text")
         XCTAssertEqual(measured.maxY, originalBounds.maxY, accuracy: 0.01, "top edge must stay fixed as the box grows")
         XCTAssertLessThan(measured.minY, originalBounds.minY, "extra height must be added below the top, not above it")
+    }
+
+    func testMeasuredBoundsWrapsWithinDetectedColumn() throws {
+        let originalBounds = CGRect(x: 70, y: 700, width: 90, height: 16)
+        let operation = PDFTextEditOperation(
+            pageRefID: UUID(),
+            sourceBlockID: UUID(),
+            sourceBounds: originalBounds,
+            editedBounds: originalBounds,
+            columnBounds: CGRect(x: 70, y: 0, width: 150, height: 792),
+            replacementText: "A much longer replacement phrase that must wrap before the sidebar",
+            fontName: "Helvetica",
+            fontSize: 12,
+            textColor: .documentText,
+            alignment: .left
+        )
+
+        let measured = PDFEditedPageRenderer.measuredBounds(for: operation)
+
+        XCTAssertLessThanOrEqual(measured.maxX, 220.01)
+        XCTAssertGreaterThan(measured.height, originalBounds.height)
+    }
+
+    func testMeasuredBoundsPreservesManualResizeGeometry() throws {
+        let committed = CGRect(x: 80, y: 640, width: 110, height: 44)
+        let operation = PDFTextEditOperation(
+            pageRefID: UUID(),
+            sourceBlockID: UUID(),
+            sourceBounds: CGRect(x: 70, y: 700, width: 90, height: 16),
+            editedBounds: committed,
+            columnBounds: CGRect(x: 70, y: 0, width: 150, height: 792),
+            replacementText: "Manual geometry should be honored even when the text is long enough to wrap",
+            fontName: "Helvetica",
+            fontSize: 12,
+            textColor: .documentText,
+            alignment: .left,
+            didManuallyReposition: true,
+            didManuallyResizeWidth: true,
+            didManuallyResizeHeight: true
+        )
+
+        let measured = PDFEditedPageRenderer.measuredBounds(for: operation)
+
+        XCTAssertEqual(measured, committed)
     }
 
     func testInlineTextEditPreservesExistingAnnotationsOnTheSamePage() throws {
@@ -542,10 +674,67 @@ final class InlineTextEditPlacementTests: XCTestCase {
 
         let stored = try XCTUnwrap(viewModel.document.workspace.pageEditStates.first?.operations.first)
         XCTAssertEqual(stored.sourceBounds, sourceBounds)
+        XCTAssertEqual(stored.columnBounds, sourceBlock.columnBounds)
         XCTAssertEqual(stored.editedBounds.minX, committedBounds.minX, accuracy: 0.01)
         XCTAssertEqual(stored.editedBounds.minY, committedBounds.minY, accuracy: 0.01)
         XCTAssertEqual(stored.editedBounds.width, committedBounds.width, accuracy: 0.01)
         XCTAssertEqual(stored.editedBounds.height, committedBounds.height, accuracy: 0.01)
+    }
+
+    func testInlineTextEditStoresParagraphLineEraseBoundsAndManualFlags() throws {
+        let fixture = try makeMemberWithPDF(name: "Editable", pageTexts: ["Original text"])
+        let document = WorkspaceDocument()
+        document.workspace.documents = [fixture.member]
+        document.workspace.pageOrder = fixture.refs
+        document.memberPDFData[fixture.member.id] = fixture.pdfData
+        let viewModel = WorkspaceViewModel(document: document, processingEngine: PDFKitProcessingEngineFallback())
+
+        let firstLine = PDFTextLine(
+            text: "Partnered with product teams",
+            bounds: CGRect(x: 72, y: 650, width: 180, height: 10),
+            runs: [],
+            confidence: .high
+        )
+        let secondLine = PDFTextLine(
+            text: "to deliver trailing punctuation.",
+            bounds: CGRect(x: 88, y: 636, width: 160, height: 10),
+            runs: [],
+            confidence: .high
+        )
+        let sourceBlock = EditableTextBlock(
+            pageRefID: fixture.refs[0].id,
+            text: "\(firstLine.text) \(secondLine.text)",
+            bounds: firstLine.bounds.union(secondLine.bounds).insetBy(dx: -2, dy: -2),
+            lines: [firstLine, secondLine],
+            columnBounds: CGRect(x: 72, y: 0, width: 260, height: 792),
+            fontName: "Helvetica",
+            fontSize: 9,
+            textColor: .documentText,
+            rotation: 0,
+            baseline: firstLine.bounds.minY,
+            confidence: .high
+        )
+
+        XCTAssertTrue(viewModel.applyInlineTextEdit(
+            pageRef: fixture.refs[0],
+            sourceBlock: sourceBlock,
+            replacementText: "A replacement paragraph that should reflow in the same column.",
+            editedBounds: CGRect(x: 72, y: 620, width: 200, height: 34),
+            fontName: "Helvetica",
+            fontSize: 9,
+            textColor: .black,
+            alignment: .left,
+            didManuallyReposition: true,
+            didManuallyResizeWidth: true,
+            didManuallyResizeHeight: true
+        ))
+
+        let stored = try XCTUnwrap(viewModel.document.workspace.pageEditStates.first?.operations.first)
+        XCTAssertEqual(stored.sourceLineBounds, [firstLine.bounds, secondLine.bounds])
+        XCTAssertEqual(stored.columnBounds, sourceBlock.columnBounds)
+        XCTAssertTrue(stored.didManuallyReposition)
+        XCTAssertTrue(stored.didManuallyResizeWidth)
+        XCTAssertTrue(stored.didManuallyResizeHeight)
     }
 
     func testRepeatedInlineTextEditPreservesOriginalSourceBoundsButHonorsNewCommittedGeometry() throws {
@@ -587,6 +776,47 @@ final class InlineTextEditPlacementTests: XCTestCase {
         XCTAssertEqual(stored.editedBounds.minY, secondCommittedBounds.minY, accuracy: 0.01)
         XCTAssertEqual(stored.editedBounds.width, secondCommittedBounds.width, accuracy: 0.01)
         XCTAssertEqual(stored.editedBounds.height, secondCommittedBounds.height, accuracy: 0.01)
+    }
+
+    func testRepeatedInlineTextEditPreservesExistingManualGeometryFlags() throws {
+        let fixture = try makeMemberWithPDF(name: "Editable", pageTexts: ["Original text"])
+        let document = WorkspaceDocument()
+        document.workspace.documents = [fixture.member]
+        document.workspace.pageOrder = fixture.refs
+        document.memberPDFData[fixture.member.id] = fixture.pdfData
+        let viewModel = WorkspaceViewModel(document: document, processingEngine: PDFKitProcessingEngineFallback())
+
+        let sourceBounds = CGRect(x: 34, y: 610, width: 120, height: 13)
+        let manualBounds = CGRect(x: 64, y: 560, width: 140, height: 42)
+        let sourceBlock = EditableTextBlock(
+            pageRefID: fixture.refs[0].id, text: "Original text", bounds: sourceBounds,
+            lines: [], columnBounds: CGRect(x: 34, y: 0, width: 240, height: 792),
+            fontName: "Helvetica", fontSize: 10, textColor: .documentText,
+            rotation: 0, baseline: 610, confidence: .high)
+
+        XCTAssertTrue(viewModel.applyInlineTextEdit(
+            pageRef: fixture.refs[0], sourceBlock: sourceBlock,
+            replacementText: "First replacement",
+            editedBounds: manualBounds, fontName: "Helvetica", fontSize: 10,
+            textColor: .black, alignment: .left,
+            didManuallyReposition: true,
+            didManuallyResizeWidth: true,
+            didManuallyResizeHeight: true))
+
+        var reeditBlock = sourceBlock
+        reeditBlock.text = "First replacement"
+        reeditBlock.bounds = manualBounds
+        XCTAssertTrue(viewModel.applyInlineTextEdit(
+            pageRef: fixture.refs[0], sourceBlock: reeditBlock,
+            replacementText: "Second replacement with more words",
+            editedBounds: manualBounds, fontName: "Helvetica", fontSize: 10,
+            textColor: .black, alignment: .left))
+
+        let stored = try XCTUnwrap(viewModel.document.workspace.pageEditStates.first?.operations.first)
+        XCTAssertTrue(stored.didManuallyReposition)
+        XCTAssertTrue(stored.didManuallyResizeWidth)
+        XCTAssertTrue(stored.didManuallyResizeHeight)
+        XCTAssertEqual(stored.editedBounds, manualBounds)
     }
 
     func testReopeningExistingInlineTextEditPreservesStoredAlignment() throws {
@@ -1165,6 +1395,40 @@ final class WorkspaceViewModelTests: XCTestCase {
         XCTAssertEqual(changeCount, 1)
     }
 
+    func testNoteEditorCommitsPastedNoteWhenDoneIsPressed() throws {
+        let pdf = makePDF(pageTexts: ["Note editor"])
+        let page = try XCTUnwrap(pdf.page(at: 0))
+        let annotation = PDFAnnotation(bounds: CGRect(x: 20, y: 20, width: 24, height: 24), forType: .text, withProperties: nil)
+        annotation.contents = ""
+        annotation.setValue(true, forAnnotationKey: WorkspaceViewModel.draftTextAnnotationKey)
+        page.addAnnotation(annotation)
+        var changeCount = 0
+        var didClose = false
+        let controller = NoteEditorViewController(annotation: annotation) { _, _ in
+        } changeHandler: {
+            changeCount += 1
+        }
+        controller.closeHandler = {
+            didClose = true
+        }
+
+        controller.loadViewIfNeeded()
+        let textView = try XCTUnwrap(firstDescendant(of: NSTextView.self, in: controller.view))
+        let doneButton = try XCTUnwrap(findSubview(in: controller.view) { (button: NSButton) in
+            button.title == "Done"
+        })
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString("This is a pasted note", forType: .string)
+        textView.paste(nil)
+        doneButton.performClick(nil)
+
+        XCTAssertEqual(annotation.contents, "This is a pasted note")
+        XCTAssertEqual(annotation.value(forAnnotationKey: WorkspaceViewModel.draftTextAnnotationKey) as? Bool, false)
+        XCTAssertTrue(page.annotations.contains(annotation))
+        XCTAssertEqual(changeCount, 1)
+        XCTAssertTrue(didClose)
+    }
+
     func testAddTextBoxRejectsMalformedPagePoint() throws {
         let pdf = makePDF(pageTexts: ["Text"])
         let page = try XCTUnwrap(pdf.page(at: 0))
@@ -1233,6 +1497,26 @@ private func makeScaledTextPDF(text: String, fontSize: CGFloat, scale: CGFloat) 
         fontSize: fontSize,
         scale: scale
     )
+    return PDFDocument(data: view.dataWithPDF(inside: view.bounds))!
+}
+
+private func makeWrappedBulletPDF() -> PDFDocument {
+    let view = WrappedBulletFixturePageView(frame: CGRect(x: 0, y: 0, width: 612, height: 792))
+    return PDFDocument(data: view.dataWithPDF(inside: view.bounds))!
+}
+
+private func makeTwoColumnPDF() -> PDFDocument {
+    let view = TwoColumnFixturePageView(frame: CGRect(x: 0, y: 0, width: 612, height: 792))
+    return PDFDocument(data: view.dataWithPDF(inside: view.bounds))!
+}
+
+private func makeTwoColumnWrappedPDF() -> PDFDocument {
+    let view = TwoColumnWrappedFixturePageView(frame: CGRect(x: 0, y: 0, width: 612, height: 792))
+    return PDFDocument(data: view.dataWithPDF(inside: view.bounds))!
+}
+
+private func makeConsecutiveBulletsPDF() -> PDFDocument {
+    let view = ConsecutiveBulletsFixturePageView(frame: CGRect(x: 0, y: 0, width: 612, height: 792))
     return PDFDocument(data: view.dataWithPDF(inside: view.bounds))!
 }
 
@@ -1375,6 +1659,110 @@ private final class ScaledTextFixturePageView: NSView {
             ]
         )
         context.restoreGState()
+    }
+}
+
+private final class WrappedBulletFixturePageView: NSView {
+    override var isFlipped: Bool { true }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+    }
+
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.white.setFill()
+        bounds.fill()
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.firstLineHeadIndent = 0
+        paragraph.headIndent = 16
+        paragraph.lineBreakMode = .byWordWrapping
+        NSString(string: "• Partnered with product, design, and engineering teams to deliver a deliberately wrapped bullet with trailing punctuation.")
+            .draw(
+                in: CGRect(x: 72, y: 72, width: 235, height: 80),
+                withAttributes: [
+                    .font: NSFont(name: "Helvetica", size: 10) ?? NSFont.systemFont(ofSize: 10),
+                    .foregroundColor: NSColor.black,
+                    .paragraphStyle: paragraph
+                ]
+            )
+    }
+}
+
+private final class TwoColumnFixturePageView: NSView {
+    override var isFlipped: Bool { true }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+    }
+
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.white.setFill()
+        bounds.fill()
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont(name: "Helvetica", size: 10) ?? NSFont.systemFont(ofSize: 10),
+            .foregroundColor: NSColor.black
+        ]
+        NSString(string: "Main column editable sentence").draw(at: CGPoint(x: 72, y: 96), withAttributes: attrs)
+        NSString(string: "Sidebar detail").draw(at: CGPoint(x: 360, y: 96), withAttributes: attrs)
+    }
+}
+
+private final class TwoColumnWrappedFixturePageView: NSView {
+    override var isFlipped: Bool { true }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+    }
+
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.white.setFill()
+        bounds.fill()
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byWordWrapping
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont(name: "Helvetica", size: 10) ?? NSFont.systemFont(ofSize: 10),
+            .foregroundColor: NSColor.black,
+            .paragraphStyle: paragraph
+        ]
+        NSString(string: "Left column wrapped sentence with continuation text for paragraph grouping.")
+            .draw(in: CGRect(x: 72, y: 96, width: 170, height: 70), withAttributes: attrs)
+        NSString(string: "Right column wrapped sentence with continuation text for paragraph grouping.")
+            .draw(in: CGRect(x: 340, y: 96, width: 170, height: 70), withAttributes: attrs)
+    }
+}
+
+private final class ConsecutiveBulletsFixturePageView: NSView {
+    override var isFlipped: Bool { true }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+    }
+
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.white.setFill()
+        bounds.fill()
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont(name: "Helvetica", size: 10) ?? NSFont.systemFont(ofSize: 10),
+            .foregroundColor: NSColor.black
+        ]
+        NSString(string: "• First item.").draw(at: CGPoint(x: 72, y: 96), withAttributes: attrs)
+        NSString(string: "• Second item.").draw(at: CGPoint(x: 72, y: 111), withAttributes: attrs)
     }
 }
 

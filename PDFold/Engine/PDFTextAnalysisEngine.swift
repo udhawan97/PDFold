@@ -252,7 +252,7 @@ final class PDFTextAnalysisEngine {
             }
         }
 
-        return lines.flatMap { rawLine -> [EditableTextBlock] in
+        let lineBlocks = lines.flatMap { rawLine -> [EditableTextBlock] in
             let sorted = rawLine.sorted {
                 ($0.bounds?.minX ?? .greatestFiniteMagnitude) < ($1.bounds?.minX ?? .greatestFiniteMagnitude)
             }
@@ -265,7 +265,11 @@ final class PDFTextAnalysisEngine {
                 buildBlock(from: segment, pageRefID: pageRefID, confidence: confidence, sourcePage: sourcePage)
             }
         }
-        .sorted { $0.bounds.minY > $1.bounds.minY }
+        let pageBounds = sourcePage?.bounds(for: .cropBox)
+            ?? unionBounds(lineBlocks.map(\.bounds))?.insetBy(dx: -24, dy: -24)
+            ?? .zero
+        return mergeWrappedLines(assignColumnBounds(to: lineBlocks, pageBounds: pageBounds))
+            .sorted { $0.bounds.minY > $1.bounds.minY }
     }
 
     /// Splits a single vertically-grouped line into separate column segments wherever the
@@ -330,6 +334,7 @@ final class PDFTextAnalysisEngine {
             text: text,
             bounds: bounds.insetBy(dx: -2, dy: -2),
             lines: [line],
+            columnBounds: nil,
             fontName: fontName,
             fontSize: fontSize,
             textColor: color,
@@ -351,6 +356,7 @@ final class PDFTextAnalysisEngine {
             text: pageText,
             bounds: bounds.insetBy(dx: 48, dy: 48),
             lines: [],
+            columnBounds: bounds.insetBy(dx: 48, dy: 48),
             fontName: "Helvetica",
             fontSize: 12,
             textColor: .documentText,
@@ -365,6 +371,126 @@ final class PDFTextAnalysisEngine {
         guard var result = rects.first else { return nil }
         rects.dropFirst().forEach { result = result.union($0) }
         return result
+    }
+
+    private func assignColumnBounds(to blocks: [EditableTextBlock], pageBounds: CGRect) -> [EditableTextBlock] {
+        guard !blocks.isEmpty, pageBounds.width > 0 else { return blocks }
+        return blocks.map { block in
+            var updated = block
+            let rightNeighborMinX = blocks
+                .filter { candidate in
+                    candidate.id != block.id &&
+                    candidate.bounds.minX > block.bounds.minX + max(36, block.fontSize * 4) &&
+                    verticalDistance(between: block.bounds, and: candidate.bounds) <= max(24, block.fontSize * 3)
+                }
+                .map(\.bounds.minX)
+                .min()
+
+            let rightEdge: CGFloat
+            if let rightNeighborMinX {
+                rightEdge = min(pageBounds.maxX - 8, rightNeighborMinX - max(6, block.fontSize))
+            } else {
+                rightEdge = pageBounds.maxX - 12
+            }
+            let leftEdge = max(pageBounds.minX + 8, block.bounds.minX)
+            let width = max(block.bounds.width, rightEdge - leftEdge)
+            updated.columnBounds = CGRect(
+                x: leftEdge,
+                y: pageBounds.minY,
+                width: width,
+                height: pageBounds.height
+            )
+            return updated
+        }
+    }
+
+    private func mergeWrappedLines(_ blocks: [EditableTextBlock]) -> [EditableTextBlock] {
+        let sorted = blocks.sorted {
+            if abs($0.bounds.midY - $1.bounds.midY) > max($0.fontSize, $1.fontSize) {
+                return $0.bounds.midY > $1.bounds.midY
+            }
+            return $0.bounds.minX < $1.bounds.minX
+        }
+        var merged: [EditableTextBlock] = []
+        for block in sorted {
+            guard let mergeIndex = merged.indices.reversed().first(where: { shouldMergeWrappedLine(previous: merged[$0], next: block) }) else {
+                merged.append(block)
+                continue
+            }
+            var last = merged[mergeIndex]
+            last.text = [last.text, block.text]
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .joined(separator: " ")
+            last.lines.append(contentsOf: block.lines)
+            last.bounds = last.bounds.union(block.bounds)
+            if let existingColumn = last.columnBounds, let nextColumn = block.columnBounds {
+                let minX = min(existingColumn.minX, nextColumn.minX)
+                let maxX = min(existingColumn.maxX, nextColumn.maxX)
+                last.columnBounds = CGRect(
+                    x: minX,
+                    y: min(existingColumn.minY, nextColumn.minY),
+                    width: max(last.bounds.width, maxX - minX),
+                    height: max(existingColumn.maxY, nextColumn.maxY) - min(existingColumn.minY, nextColumn.minY)
+                )
+            } else {
+                last.columnBounds = last.columnBounds ?? block.columnBounds
+            }
+            last.confidence = last.confidence == .high && block.confidence == .high ? .high : .medium
+            merged[mergeIndex] = last
+        }
+        return merged
+    }
+
+    private func shouldMergeWrappedLine(previous: EditableTextBlock, next: EditableTextBlock) -> Bool {
+        guard previous.confidence != .low, next.confidence != .low else { return false }
+        guard fontsMatch(previous, next), colorsMatch(previous.textColor, next.textColor) else { return false }
+        let verticalGap = previous.bounds.minY - next.bounds.maxY
+        let lineHeight = max(previous.bounds.height, next.bounds.height, previous.fontSize, next.fontSize)
+        let sameBaseline = abs(previous.bounds.midY - next.bounds.midY) <= lineHeight * 0.45
+        let horizontalGap = next.bounds.minX - previous.bounds.maxX
+        if sameBaseline,
+           horizontalGap >= 0,
+           horizontalGap <= max(30, lineHeight * 3),
+           previous.text.trimmingCharacters(in: .whitespacesAndNewlines).isLikelyStandaloneListMarker {
+            return true
+        }
+        guard verticalGap >= -lineHeight * 0.35, verticalGap <= lineHeight * 1.25 else { return false }
+        guard columnBoundsCompatible(previous.columnBounds, next.columnBounds, tolerance: max(12, lineHeight)) else { return false }
+
+        let indentDelta = next.bounds.minX - previous.bounds.minX
+        let sameLeft = abs(indentDelta) <= max(8, lineHeight * 0.8)
+        let hangingContinuation = indentDelta > 0 && indentDelta <= max(48, lineHeight * 4)
+        let trimmedNext = next.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let veryShortContinuation = trimmedNext.count <= 3
+        let trimmedPrevious = previous.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let previousLooksOpen = trimmedPrevious.range(of: #"[.!?;:]$"#, options: .regularExpression) == nil
+        guard veryShortContinuation || !trimmedNext.isLikelyListItemStart else { return false }
+
+        return (sameLeft || hangingContinuation || veryShortContinuation) &&
+            (previousLooksOpen || veryShortContinuation)
+    }
+
+    private func fontsMatch(_ lhs: EditableTextBlock, _ rhs: EditableTextBlock) -> Bool {
+        lhs.fontName == rhs.fontName && abs(lhs.fontSize - rhs.fontSize) <= max(0.75, lhs.fontSize * 0.08)
+    }
+
+    private func colorsMatch(_ lhs: CodableColor, _ rhs: CodableColor) -> Bool {
+        abs(lhs.red - rhs.red) <= 0.02 &&
+            abs(lhs.green - rhs.green) <= 0.02 &&
+            abs(lhs.blue - rhs.blue) <= 0.02 &&
+            abs(lhs.alpha - rhs.alpha) <= 0.02
+    }
+
+    private func columnBoundsCompatible(_ lhs: CGRect?, _ rhs: CGRect?, tolerance: CGFloat) -> Bool {
+        guard let lhs, let rhs else { return true }
+        return abs(lhs.maxX - rhs.maxX) <= tolerance * 2.5
+    }
+
+    private func verticalDistance(between lhs: CGRect, and rhs: CGRect) -> CGFloat {
+        if lhs.intersects(rhs) { return 0 }
+        if lhs.maxY < rhs.minY { return rhs.minY - lhs.maxY }
+        return lhs.minY - rhs.maxY
     }
 
     private func median(_ values: [CGFloat]) -> CGFloat {
@@ -399,5 +525,15 @@ final class PDFTextAnalysisEngine {
         // shorter than the nominal point size. 1.15 keeps replacement glyphs visually close
         // to the source ink without accepting unscaled nominal sizes from CTM-scaled pages.
         return max(4, inkHeight * 1.15)
+    }
+}
+
+private extension String {
+    var isLikelyListItemStart: Bool {
+        range(of: #"^\s*([•\-–—*]|\(?[0-9A-Za-z]+\)|[0-9A-Za-z]+[.)])\s+"#, options: .regularExpression) != nil
+    }
+
+    var isLikelyStandaloneListMarker: Bool {
+        range(of: #"^\s*([•\-–—*]|\(?[0-9A-Za-z]+\)|[0-9A-Za-z]+[.)])\s*$"#, options: .regularExpression) != nil
     }
 }
