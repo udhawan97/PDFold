@@ -5,7 +5,7 @@ PATH="/usr/bin:/bin:/usr/sbin:/sbin"
 
 APP_NAME="pdFold"
 LEGACY_APP_NAME="PDFold"
-REPO="udhawan97/PDFold"
+REPO="udhawan97/pdFold"
 CONFIGURATION="release"
 OPEN_AFTER_INSTALL=1
 CLEAN_BUILD=0
@@ -256,14 +256,14 @@ install_staged_app() {
 #!/bin/zsh
 set -euo pipefail
 PATH="/usr/bin:/bin:/usr/sbin:/sbin"
-/usr/bin/curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/install.sh | /bin/zsh
+/usr/bin/curl -fsSL https://raw.githubusercontent.com/udhawan97/pdFold/main/install.sh | /bin/zsh
 LAUNCHER
         chmod +x "$DESKTOP_LAUNCHER" 2>/dev/null || print_note "Could not make the Desktop launcher executable."
         cat > "$DESKTOP_UNINSTALLER" <<'UNINSTALLER'
 #!/bin/zsh
 set -euo pipefail
 PATH="/usr/bin:/bin:/usr/sbin:/sbin"
-/usr/bin/curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/scripts/uninstall-mac.sh | /bin/zsh
+/usr/bin/curl -fsSL https://raw.githubusercontent.com/udhawan97/pdFold/main/scripts/uninstall-mac.sh | /bin/zsh
 UNINSTALLER
         chmod +x "$DESKTOP_UNINSTALLER" 2>/dev/null || print_note "Could not make the Desktop uninstaller executable."
     else

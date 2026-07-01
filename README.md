@@ -59,17 +59,17 @@
 Paste this into Terminal:
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/install.sh | zsh
+curl -fsSL https://raw.githubusercontent.com/udhawan97/pdFold/main/install.sh | zsh
 ```
 
 The installer downloads the latest prebuilt app, places it in `~/Applications/pdFold.app`, and adds Desktop commands for launching/updating and clean uninstall.
 
-Direct download: [`pdFold.zip`](https://github.com/udhawan97/PDFold/releases/latest/download/pdFold.zip) from the latest GitHub release.
+Direct download: [`pdFold.zip`](https://github.com/udhawan97/pdFold/releases/latest/download/pdFold.zip) from the latest GitHub release.
 
 Homebrew cask:
 
 ```zsh
-brew tap udhawan97/pdfold https://github.com/udhawan97/PDFold
+brew tap udhawan97/pdfold https://github.com/udhawan97/pdFold
 brew install --cask udhawan97/pdfold/pdfold
 ```
 
@@ -182,9 +182,9 @@ pdFold release v5 is a release-hardened local-first macOS app for collecting sca
 
 |  | Detail | Status |
 | --- | --- | --- |
-| 🚢 | Release tag | [`release-v5`](https://github.com/udhawan97/PDFold/releases/tag/release-v5) |
+| 🚢 | Release tag | [`release-v5`](https://github.com/udhawan97/pdFold/releases/tag/release-v5) |
 | 🧾 | App metadata | `CFBundleShortVersionString` `3.0`, `CFBundleVersion` `5` |
-| ⚡ | Install path | One-line installer downloads [`pdFold.zip`](https://github.com/udhawan97/PDFold/releases/latest/download/pdFold.zip) from the latest GitHub release |
+| ⚡ | Install path | One-line installer downloads [`pdFold.zip`](https://github.com/udhawan97/pdFold/releases/latest/download/pdFold.zip) from the latest GitHub release |
 | 🧪 | Smoke test | `./scripts/install-mac.sh --no-open` |
 | 🔐 | Signing | Local ad-hoc signing for source and release packaging |
 | 📦 | Distribution style | Prebuilt release zip for users, with opt-in source builds for developers |
@@ -207,10 +207,10 @@ pdFold release v5 is a release-hardened local-first macOS app for collecting sca
 Paste one command into Terminal:
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/install.sh | zsh
+curl -fsSL https://raw.githubusercontent.com/udhawan97/pdFold/main/install.sh | zsh
 ```
 
-The installer downloads the latest prebuilt [`pdFold.zip`](https://github.com/udhawan97/PDFold/releases/latest/download/pdFold.zip) from GitHub Releases, installs `pdFold.app` to `~/Applications`, creates self-updating launch and uninstall Desktop commands, removes download quarantine metadata, and opens the app.
+The installer downloads the latest prebuilt [`pdFold.zip`](https://github.com/udhawan97/pdFold/releases/latest/download/pdFold.zip) from GitHub Releases, installs `pdFold.app` to `~/Applications`, creates self-updating launch and uninstall Desktop commands, removes download quarantine metadata, and opens the app.
 
 The normal path does not require Xcode, Apple's Command Line Tools, a package manager, or a GitHub account. The installer is intentionally uneventful, which is exactly how installers should behave.
 
@@ -219,7 +219,7 @@ Important release note: the zero-compile installer depends on a published GitHub
 ### Homebrew Cask
 
 ```zsh
-brew tap udhawan97/pdfold https://github.com/udhawan97/PDFold
+brew tap udhawan97/pdfold https://github.com/udhawan97/pdFold
 brew install --cask udhawan97/pdfold/pdfold
 ```
 
@@ -235,15 +235,15 @@ brew upgrade --cask udhawan97/pdfold/pdfold
 For detailed install diagnostics, run the same command with verbose logging enabled:
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/install.sh | PDFOLD_INSTALL_VERBOSE=1 zsh
+curl -fsSL https://raw.githubusercontent.com/udhawan97/pdFold/main/install.sh | PDFOLD_INSTALL_VERBOSE=1 zsh
 ```
 
 <details>
 <summary>Developer source install</summary>
 
 ```zsh
-git clone https://github.com/udhawan97/PDFold.git
-cd PDFold
+git clone https://github.com/udhawan97/pdFold.git
+cd pdFold
 ./scripts/install-mac.sh
 ```
 </details>
@@ -257,7 +257,7 @@ Double-click **pdFold.command** on the Desktop. The launcher checks for the late
 You can also paste the installer command again:
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/install.sh | zsh
+curl -fsSL https://raw.githubusercontent.com/udhawan97/pdFold/main/install.sh | zsh
 ```
 
 If pdFold is already installed, the updater closes the running app if needed, replaces `~/Applications/pdFold.app`, refreshes the Desktop launcher, removes quarantine metadata, and opens the updated app.
@@ -278,7 +278,7 @@ Double-click **Uninstall pdFold.command** on the Desktop to remove the installed
 To keep app support, preferences, caches, and sandbox data, run:
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/scripts/uninstall-mac.sh | zsh -s -- --keep-user-data
+curl -fsSL https://raw.githubusercontent.com/udhawan97/pdFold/main/scripts/uninstall-mac.sh | zsh -s -- --keep-user-data
 ```
 
 ### Homebrew
@@ -525,7 +525,7 @@ The normal installer uses a prebuilt app and does not need developer tools. This
 Wait for the release workflow to publish `pdFold.zip`, then run the installer again. Developer source builds can opt in with:
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/install.sh | PDFOLD_ALLOW_SOURCE_BUILD=1 zsh
+curl -fsSL https://raw.githubusercontent.com/udhawan97/pdFold/main/install.sh | PDFOLD_ALLOW_SOURCE_BUILD=1 zsh
 ```
 </details>
 
@@ -537,7 +537,7 @@ Run the installer again. It refreshes `~/Applications/pdFold.app` and recreates 
 For more detail, run the installer with verbose logging:
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/install.sh | PDFOLD_INSTALL_VERBOSE=1 zsh
+curl -fsSL https://raw.githubusercontent.com/udhawan97/pdFold/main/install.sh | PDFOLD_INSTALL_VERBOSE=1 zsh
 ```
 </details>
 

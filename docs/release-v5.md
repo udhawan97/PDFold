@@ -22,7 +22,7 @@ Build the asset with:
 
 **Release:** Latest release  
 **Release date:** July 1, 2026  
-**Tag:** [`release-v5`](https://github.com/udhawan97/PDFold/releases/tag/release-v5)
+**Tag:** [`release-v5`](https://github.com/udhawan97/pdFold/releases/tag/release-v5)
 
 ---
 
@@ -35,17 +35,17 @@ The release also preserves original source data for supported non-PDF imports, a
 ## Install
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/install.sh | zsh
+curl -fsSL https://raw.githubusercontent.com/udhawan97/pdFold/main/install.sh | zsh
 ```
 
-Direct download: [`pdFold.zip`](https://github.com/udhawan97/PDFold/releases/latest/download/pdFold.zip)
+Direct download: [`pdFold.zip`](https://github.com/udhawan97/pdFold/releases/latest/download/pdFold.zip)
 
 The installer downloads the latest `pdFold.zip`, installs `pdFold.app` to `~/Applications`, creates Desktop commands for launch/update and uninstall, clears quarantine metadata, and opens pdFold.
 
 Homebrew users can install the same prebuilt release app through the repository cask:
 
 ```zsh
-brew tap udhawan97/pdfold https://github.com/udhawan97/PDFold
+brew tap udhawan97/pdfold https://github.com/udhawan97/pdFold
 brew install --cask udhawan97/pdfold/pdfold
 ```
 
@@ -100,7 +100,7 @@ Double-click `Uninstall pdFold.command` on the Desktop.
 To keep pdFold app support, preferences, caches, and sandbox data:
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/udhawan97/PDFold/main/scripts/uninstall-mac.sh | zsh -s -- --keep-user-data
+curl -fsSL https://raw.githubusercontent.com/udhawan97/pdFold/main/scripts/uninstall-mac.sh | zsh -s -- --keep-user-data
 ```
 
 ---
@@ -135,12 +135,13 @@ Feature range used for the product-change summary: `release-v4..HEAD`
 Summary:
 
 ```text
-9 commits changed 19 files, with 2211 insertions and 294 deletions.
+10 commits changed 21 files, with 2283 insertions and 312 deletions.
 ```
 
 Commits:
 
-- `HEAD` Add optional Homebrew cask
+- `HEAD` Normalize pdFold install links
+- `97c175b` Add optional Homebrew cask
 - `b92d4f6` Polish release README and CI test
 - `f709d96` Stabilize CI plist validation
 - `25ee541` Prepare release v5
@@ -158,6 +159,8 @@ Notable files:
 - `PDFold/Models/SourceDocumentPayload.swift`
 - `PDFold.xcodeproj/project.pbxproj`
 - `Casks/pdfold.rb`
+- `install.sh`
+- `scripts/install-mac.sh`
 - `.github/workflows/ci.yml`
 - `PDFold/Views/ContentView.swift`
 - `PDFold/Views/ReadingCanvas.swift`

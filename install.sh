@@ -4,7 +4,7 @@ set -euo pipefail
 PATH="/usr/bin:/bin:/usr/sbin:/sbin"
 
 APP_NAME="pdFold"
-REPO="udhawan97/PDFold"
+REPO="udhawan97/pdFold"
 RAW_BASE="https://raw.githubusercontent.com/$REPO/main"
 WORK_DIR="$HOME/.pdfold"
 SRC_DIR="$WORK_DIR/src"
@@ -80,7 +80,11 @@ else
     TARBALL="$WORK_DIR/source.tar.gz"
     /usr/bin/curl -fsSL "https://codeload.github.com/$REPO/tar.gz/refs/heads/main" -o "$TARBALL"
     /usr/bin/tar -xzf "$TARBALL" -C "$WORK_DIR"
-    mv "$WORK_DIR/PDFold-main" "$SRC_DIR"
+    if [[ -d "$WORK_DIR/pdFold-main" ]]; then
+        mv "$WORK_DIR/pdFold-main" "$SRC_DIR"
+    else
+        mv "$WORK_DIR/PDFold-main" "$SRC_DIR"
+    fi
 fi
 
 [[ -f "$INSTALLER" ]] || fail "Source downloaded, but the installer was not found."

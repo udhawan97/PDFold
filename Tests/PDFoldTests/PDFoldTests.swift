@@ -1492,7 +1492,9 @@ final class WorkspaceDocumentTests: XCTestCase {
 
     func testAppInfoPlistDoesNotAdvertiseWorkspaceSaveFormat() throws {
         try XCTSkipIf(
-            ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true",
+            ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" ||
+                ProcessInfo.processInfo.environment["CI"] == "true" ||
+                #filePath.contains("/Users/runner/work/"),
             "GitHub Actions validates this directly in the CI plist gate."
         )
         let plistURL = try appInfoPlistURL(sourceFile: #filePath)

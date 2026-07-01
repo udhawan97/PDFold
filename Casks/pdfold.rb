@@ -2,10 +2,10 @@ cask "pdfold" do
   version :latest
   sha256 :no_check
 
-  url "https://github.com/udhawan97/PDFold/releases/latest/download/pdFold.zip"
+  url "https://github.com/udhawan97/pdFold/releases/latest/download/pdFold.zip"
   name "pdFold"
   desc "Native macOS workspace for organizing documents into PDF workflows"
-  homepage "https://github.com/udhawan97/PDFold"
+  homepage "https://github.com/udhawan97/pdFold"
 
   depends_on macos: :sonoma
 
