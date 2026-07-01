@@ -535,6 +535,10 @@ final class WorkspaceViewModel {
         document.workspace.modifiedAt = Date()
     }
 
+    func markAnnotationsModified() {
+        markWorkspaceModified()
+    }
+
     func selectPage(_ ref: PageRef) {
         selectedPageRefID = ref.id
         if let pageIndex = combinedPageIndex(for: ref) {
@@ -763,6 +767,7 @@ final class WorkspaceViewModel {
             page.addAnnotation(ann)
             undoManager?.registerUndo(withTarget: self) { _ in page.removeAnnotation(ann) }
         }
+        markAnnotationsModified()
         undoManager?.setActionName("Highlight")
     }
 
@@ -774,7 +779,9 @@ final class WorkspaceViewModel {
         let ann = PDFAnnotation(bounds: bounds, forType: .text, withProperties: nil)
         ann.contents = ""
         ann.color = annotationColor
+        ann.setValue(true, forAnnotationKey: Self.draftTextAnnotationKey)
         page.addAnnotation(ann)
+        markAnnotationsModified()
         undoManager?.registerUndo(withTarget: self) { _ in page.removeAnnotation(ann) }
         undoManager?.setActionName("Add Note")
         return ann
@@ -801,6 +808,7 @@ final class WorkspaceViewModel {
         border.lineWidth = 0
         ann.border = border
         page.addAnnotation(ann)
+        markAnnotationsModified()
         undoManager?.registerUndo(withTarget: self) { _ in page.removeAnnotation(ann) }
         undoManager?.setActionName("Add Text Box")
         return ann
@@ -843,6 +851,7 @@ final class WorkspaceViewModel {
         border.lineWidth = 0
         ann.border = border
         page.addAnnotation(ann)
+        markAnnotationsModified()
         undoManager?.registerUndo(withTarget: self) { _ in page.removeAnnotation(ann) }
         undoManager?.setActionName("Replace PDF Text")
         return ann
@@ -865,6 +874,7 @@ final class WorkspaceViewModel {
         ann.border?.lineWidth = 2
         ann.add(path)
         page.addAnnotation(ann)
+        markAnnotationsModified()
         undoManager?.registerUndo(withTarget: self) { _ in page.removeAnnotation(ann) }
         undoManager?.setActionName("Ink Stroke")
     }
@@ -876,6 +886,7 @@ final class WorkspaceViewModel {
         }
         page.removeAnnotation(ann)
         selectedAnnotation = nil
+        markAnnotationsModified()
         undoManager?.registerUndo(withTarget: self) { vm in
             page.addAnnotation(ann)
             vm.selectedAnnotation = ann
@@ -965,6 +976,7 @@ final class WorkspaceViewModel {
             signedAt: Date()
         )
         document.workspace.signatures.append(placement)
+        markAnnotationsModified()
 
         // Render as a stamp annotation for display
         if let image = NSImage(data: imageData) {
@@ -1478,6 +1490,7 @@ final class WorkspaceViewModel {
             page.addAnnotation(ann)
             undoManager?.registerUndo(withTarget: self) { _ in page.removeAnnotation(ann) }
         }
+        markAnnotationsModified()
         undoManager?.setActionName(type == .underline ? "Underline" : "Strikeout")
     }
 

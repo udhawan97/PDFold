@@ -245,6 +245,33 @@ final class PDFTextEditingRedesignTests: XCTestCase {
         XCTAssertEqual(target.block.confidence, .medium)
         XCTAssertNil(viewModel.editingStatus)
     }
+
+    func testAddedStickyNoteIsDraftAndPersistsThroughSnapshot() throws {
+        let fixture = try makeMemberWithPDF(name: "Notes", pageTexts: ["Sticky note target"])
+        let document = WorkspaceDocument()
+        document.workspace.documents = [fixture.member]
+        document.workspace.pageOrder = fixture.refs
+        document.memberPDFData[fixture.member.id] = fixture.pdfData
+        let viewModel = WorkspaceViewModel(
+            document: document,
+            processingEngine: PDFKitProcessingEngineFallback()
+        )
+        let page = try XCTUnwrap(viewModel.combinedPDF.page(at: 1))
+
+        let annotation = viewModel.addNote(at: CGPoint(x: 120, y: 120), on: page)
+        XCTAssertEqual(annotation.value(forAnnotationKey: WorkspaceViewModel.draftTextAnnotationKey) as? Bool, true)
+
+        annotation.contents = "Cloud stuff to check"
+        annotation.setValue(false, forAnnotationKey: WorkspaceViewModel.draftTextAnnotationKey)
+        viewModel.markAnnotationsModified()
+        let snapshot = try document.snapshot(contentType: .pdfoldproj)
+        let savedData = try XCTUnwrap(snapshot.memberPDFData[fixture.member.id])
+        let savedPDF = try XCTUnwrap(PDFDocument(data: savedData))
+        let savedPage = try XCTUnwrap(savedPDF.page(at: 0))
+        let savedNote = try XCTUnwrap(savedPage.annotations.first(where: { $0.type == "Text" }))
+
+        XCTAssertEqual(savedNote.contents, "Cloud stuff to check")
+    }
 }
 
 final class DocumentImportConverterTests: XCTestCase {
