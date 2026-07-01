@@ -120,8 +120,23 @@ struct ContentView: View {
                 .acceptsImportDrops(isTargeted: $isNavigationDropTargeted, showsHighlight: true, perform: handleDrop)
         }
 
-        // Trailing primary: Share + Inspector
+        // Trailing: navigation, document actions, view controls, help
         ToolbarItemGroup(placement: .primaryAction) {
+            Button { showTOC.toggle() } label: {
+                Label("Contents", systemImage: "list.bullet.rectangle.portrait")
+            }
+            .acceptsImportDrops(perform: handleDrop)
+            .help("Table of contents")
+
+            Button { viewModel.isShowingSearch.toggle() } label: {
+                Label("Search", systemImage: "magnifyingglass")
+            }
+            .acceptsImportDrops(perform: handleDrop)
+            .help("Search (⌘F)")
+            .keyboardShortcut("f", modifiers: .command)
+
+            Divider()
+
             Menu {
                 ForEach(WorkspaceExportFormat.allCases) { format in
                     Button("Export as \(format.menuTitle)…") {
@@ -140,32 +155,6 @@ struct ContentView: View {
             .keyboardShortcut("e", modifiers: [.command, .shift])
 
             Button {
-                inspectorTab = .comments
-                showInspector = true
-            } label: {
-                Label("Comments", systemImage: "text.bubble")
-            }
-            .acceptsImportDrops(perform: handleDrop)
-            .help("Add and view comments")
-
-            Button { showInspector.toggle() } label: {
-                Label("Inspector", systemImage: "sidebar.right")
-            }
-            .acceptsImportDrops(perform: handleDrop)
-            .help("Toggle inspector")
-        }
-
-        // Trailing secondary: nav tools
-        ToolbarItemGroup(placement: .primaryAction) {
-            Divider()
-
-            Button { showTOC.toggle() } label: {
-                Label("Contents", systemImage: "list.bullet.rectangle.portrait")
-            }
-            .acceptsImportDrops(perform: handleDrop)
-            .help("Table of contents")
-
-            Button {
                 viewModel.isShowingSignaturePalette.toggle()
                 viewModel.currentTool = .signature
             } label: {
@@ -174,12 +163,15 @@ struct ContentView: View {
             .acceptsImportDrops(perform: handleDrop)
             .help("Place signature")
 
-            Button { viewModel.isShowingSearch.toggle() } label: {
-                Label("Search", systemImage: "magnifyingglass")
+            Divider()
+
+            Button { showInspector.toggle() } label: {
+                Label("Inspector", systemImage: "sidebar.right")
             }
             .acceptsImportDrops(perform: handleDrop)
-            .help("Search (⌘F)")
-            .keyboardShortcut("f", modifiers: .command)
+            .help("Toggle inspector")
+
+            Divider()
 
             GuideButton(autoShow: true)
                 .acceptsImportDrops(perform: handleDrop)
@@ -244,8 +236,7 @@ struct ContentView: View {
 private struct AnnotationToolPicker: View {
     @Bindable var viewModel: WorkspaceViewModel
     @State private var hoveredTool: AnnotationTool?
-    @State private var popoverTool: AnnotationTool?
-    @State private var hoverTask: Task<Void, Never>?
+    @Namespace private var selectionNamespace
 
     // Grouped by behavior so related tools sit together: selection, then
     // text markup (+ the eraser that undoes it), then free-form page content.
@@ -265,13 +256,6 @@ private struct AnnotationToolPicker: View {
                 }
                 ForEach(toolGroups[groupIndex]) { tool in
                     toolButton(tool)
-                    .popover(isPresented: popoverBinding(for: tool), arrowEdge: .bottom) {
-                        AnnotationToolPopover(tool: tool)
-                    }
-                    .onHover { isHovered in
-                        updatePopoverHover(isHovered, for: tool)
-                    }
-                    .help(tool.helpText)
                 }
             }
 
@@ -279,102 +263,95 @@ private struct AnnotationToolPicker: View {
                 Divider()
                     .frame(height: 22)
                     .padding(.horizontal, 3)
+                    .transition(.scale.combined(with: .opacity))
                 AnnotationColorButton(viewModel: viewModel)
+                    .transition(.scale.combined(with: .opacity))
             }
         }
         .padding(.horizontal, 7)
         .padding(.vertical, 4)
-        .background(.regularMaterial, in: Capsule())
+        .background(.ultraThinMaterial, in: Capsule())
         .overlay(
             Capsule()
-                .strokeBorder(Color.dsSeparator.opacity(0.75), lineWidth: 1)
+                .strokeBorder(Color.dsSeparator, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.16), radius: 10, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 2)
         .help("Annotation tool")
+        .animation(.spring(response: 0.32, dampingFraction: 0.78), value: viewModel.currentTool)
     }
 
     @ViewBuilder
     private func toolButton(_ tool: AnnotationTool) -> some View {
         let isSelected = viewModel.currentTool == tool
+        let isHovered = hoveredTool == tool
 
         Button {
             viewModel.currentTool = tool
         } label: {
             ZStack {
-                RoundedRectangle(cornerRadius: .dsRadiusMd, style: .continuous)
-                    .fill(isSelected ? Color.dsAccent : Color.clear)
-                toolIcon(tool, isSelected: isSelected)
+                if isSelected {
+                    Capsule()
+                        .fill(Color.dsAccent)
+                        .matchedGeometryEffect(id: "selectedTool", in: selectionNamespace)
+                }
+
+                HStack(spacing: 5) {
+                    toolIcon(tool, isSelected: isSelected)
+
+                    if isSelected {
+                        Text(tool.label)
+                            .font(.dsCaption().weight(.semibold))
+                            .lineLimit(1)
+                            .fixedSize()
+                            .transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .leading)))
+                    }
+                }
+                .foregroundStyle(isSelected ? Color.white : Color.dsTextSecondary)
+                .padding(.horizontal, isSelected ? 9 : 0)
             }
-            .frame(width: toolButtonWidth(for: tool), height: 32)
-            .contentShape(RoundedRectangle(cornerRadius: .dsRadiusMd, style: .continuous))
+            .frame(minWidth: 30, minHeight: 32)
+            .frame(height: 32)
+            .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ToolButtonStyle(isHovered: isHovered, isSelected: isSelected))
+        .onHover { isHovered in
+            if isHovered {
+                hoveredTool = tool
+            } else if hoveredTool == tool {
+                hoveredTool = nil
+            }
+        }
+        .help(tool.helpText)
         .accessibilityLabel(tool.label)
     }
 
     @ViewBuilder
     private func toolIcon(_ tool: AnnotationTool, isSelected: Bool) -> some View {
-        let foreground = isSelected ? Color.white : Color.dsTextSecondary
-
-        if tool == .highlight || tool == .editText {
-            HStack(spacing: 5) {
-                if tool == .highlight {
-                    HighlightGlyph(isSelected: isSelected)
-                } else {
-                    Image(systemName: tool.iconName)
-                        .font(.system(size: 15, weight: .semibold))
-                        .symbolRenderingMode(.monochrome)
-                }
-
-                Text(tool == .highlight ? "Highlight" : "Edit")
-                    .font(.system(size: 12, weight: .semibold))
-                    .lineLimit(1)
-            }
-            .foregroundStyle(foreground)
+        if tool == .highlight {
+            HighlightGlyph(isSelected: isSelected)
         } else {
             Image(systemName: tool.iconName)
                 .font(.system(size: tool == .none ? 15 : 17, weight: .semibold))
                 .symbolRenderingMode(.monochrome)
-                .foregroundStyle(foreground)
         }
     }
+}
 
-    private func toolButtonWidth(for tool: AnnotationTool) -> CGFloat {
-        switch tool {
-        case .highlight: return 84
-        case .editText: return 62
-        default: return 36
-        }
-    }
+private struct ToolButtonStyle: ButtonStyle {
+    var isHovered: Bool
+    var isSelected: Bool = false
 
-    private func popoverBinding(for tool: AnnotationTool) -> Binding<Bool> {
-        Binding {
-            popoverTool == tool
-        } set: { isPresented in
-            if !isPresented, popoverTool == tool {
-                popoverTool = nil
-            }
-        }
-    }
-
-    private func updatePopoverHover(_ isHovered: Bool, for tool: AnnotationTool) {
-        hoverTask?.cancel()
-
-        if isHovered {
-            hoveredTool = tool
-            hoverTask = Task {
-                try? await Task.sleep(for: .milliseconds(350))
-                guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    if hoveredTool == tool {
-                        popoverTool = tool
-                    }
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background {
+                if isHovered && !isSelected {
+                    Capsule()
+                        .fill(Color.dsAccentSoft)
                 }
             }
-        } else if hoveredTool == tool {
-            hoveredTool = nil
-            popoverTool = nil
-        }
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .animation(.easeOut(duration: 0.12), value: isHovered)
     }
 }
 
@@ -396,37 +373,12 @@ private struct HighlightGlyph: View {
     }
 }
 
-private struct AnnotationToolPopover: View {
-    var tool: AnnotationTool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: .dsXS) {
-            HStack(spacing: .dsSM) {
-                Image(systemName: tool.iconName)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.dsAccent)
-                    .frame(width: 18)
-                Text(tool.label)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.dsTextPrimary)
-            }
-
-            Text(tool.helpText)
-                .font(.dsCaption())
-                .foregroundStyle(Color.dsTextSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(width: 220, alignment: .leading)
-        .padding(.dsMD)
-        .background(Color.dsSurface)
-    }
-}
-
 // MARK: - Annotation color picker button
 
 private struct AnnotationColorButton: View {
     @Bindable var viewModel: WorkspaceViewModel
     @State private var showPalette = false
+    @State private var isHovered = false
 
     private var displayColor: Color {
         viewModel.currentTool.usesInkColor
@@ -437,8 +389,6 @@ private struct AnnotationColorButton: View {
     var body: some View {
         Button { showPalette.toggle() } label: {
             ZStack {
-                RoundedRectangle(cornerRadius: .dsRadiusMd, style: .continuous)
-                    .fill(showPalette ? Color.dsTextPrimary.opacity(0.12) : Color.clear)
                 Circle()
                     .fill(displayColor)
                     .frame(width: 24, height: 24)
@@ -448,7 +398,8 @@ private struct AnnotationColorButton: View {
             .frame(width: 36, height: 32)
             .contentShape(RoundedRectangle(cornerRadius: .dsRadiusMd, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ToolButtonStyle(isHovered: isHovered || showPalette))
+        .onHover { isHovered = $0 }
         .help("Annotation color")
         .popover(isPresented: $showPalette, arrowEdge: .bottom) {
             AnnotationPalettePopover(viewModel: viewModel)

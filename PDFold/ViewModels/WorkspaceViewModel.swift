@@ -87,11 +87,11 @@ enum AnnotationTool: String, CaseIterable, Identifiable {
 
     var iconName: String {
         switch self {
-        case .none:      return "rectangle.dashed"
+        case .none:      return "cursorarrow"
         case .highlight: return "highlighter"
-        case .note:      return "text.bubble"
+        case .note:      return "note.text"
         case .editText:  return "character.cursor.ibeam"
-        case .ink:       return "scribble"
+        case .ink:       return "scribble.variable"
         case .eraser:    return "eraser"
         case .underline: return "underline"
         case .strikeout: return "strikethrough"
